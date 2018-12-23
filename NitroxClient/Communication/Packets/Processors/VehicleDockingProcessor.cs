@@ -30,6 +30,14 @@ namespace NitroxClient.Communication.Packets.Processors
             
             using (packetSender.Suppress<VehicleDocking>())
             {
+                Transform transform = vehicleDockingBay.dockingEndPos;
+                if (vehicle is Exosuit)
+                {
+                    transform = vehicleDockingBay.dockingEndPosExo;
+                }
+                vehicle.transform.position = transform.position;
+                vehicle.transform.rotation = transform.rotation;
+
                 vehicleDockingBay.DockVehicle(vehicle);
             }
 
