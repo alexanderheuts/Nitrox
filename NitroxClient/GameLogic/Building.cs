@@ -6,6 +6,7 @@ using NitroxModel.DataStructures.Util;
 using NitroxModel.Helper;
 using NitroxModel.Packets;
 using UnityEngine;
+using System;
 using static NitroxClient.GameLogic.Helper.TransientLocalObjectManager;
 
 namespace NitroxClient.GameLogic
@@ -30,12 +31,22 @@ namespace NitroxClient.GameLogic
             }
 
             string guid = GuidHelper.GetGuid(constructableBase.gameObject);
-            string parentBaseGuid = (targetBase == null) ? null : GuidHelper.GetGuid(targetBase.gameObject);
+
+            // All parents come out of the box with the same GUID. 
+            // We need to make sure they're unique because we rely on the GUID for retrieval.
+            string parentGuid = Guid.NewGuid().ToString("D"); 
+            GuidHelper.SetNewGuid(constructableBase.transform.parent.gameObject, parentGuid);
+
+            string baseGuid = GuidHelper.GetGuid(constructableBase.transform.root.gameObject);
+
+            // Possibly we don't need the targetbase?
+            //string parentBaseGuid = (targetBase == null) ? null : GuidHelper.GetGuid(targetBase.gameObject);
+
             Vector3 placedPosition = constructableBase.gameObject.transform.position;
             Transform camera = Camera.main.transform;
             Optional<RotationMetadata> rotationMetadata = RotationMetadata.From(baseGhost);
 
-            BasePiece basePiece = new BasePiece(guid, placedPosition, quaternion, camera.position, camera.rotation, techType, Optional<string>.OfNullable(parentBaseGuid), false, rotationMetadata);
+            BasePiece basePiece = new BasePiece(guid, placedPosition, quaternion, camera.position, camera.rotation, techType, parentGuid, baseGuid, false, rotationMetadata);
             PlaceBasePiece placedBasePiece = new PlaceBasePiece(basePiece);
             packetSender.Send(placedBasePiece);
         }
@@ -48,23 +59,24 @@ namespace NitroxClient.GameLogic
             }
 
             string guid = GuidHelper.GetGuid(gameObject);
+            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
 
-            Optional<string> subGuid = Optional<string>.Empty();
+            string subGuid = "";
             SubRoot sub = Player.main.currentSub;
             if (sub != null)
             {
-                subGuid = Optional<string>.Of(GuidHelper.GetGuid(sub.gameObject));
+                subGuid = GuidHelper.GetGuid(sub.gameObject);
             }
 
             Transform camera = Camera.main.transform;
             Optional<RotationMetadata> rotationMetadata = Optional<RotationMetadata>.Empty();
 
-            BasePiece basePiece = new BasePiece(guid, itemPosition, quaternion, camera.position, camera.rotation, techType, subGuid, true, rotationMetadata);
+            BasePiece basePiece = new BasePiece(guid, itemPosition, quaternion, camera.position, camera.rotation, techType, parentGuid, subGuid, true, rotationMetadata);
             PlaceBasePiece placedBasePiece = new PlaceBasePiece(basePiece);
             packetSender.Send(placedBasePiece);
         }
 
-        public void ChangeConstructionAmount(GameObject gameObject, float amount)
+        public void ChangeConstructionAmount(GameObject gameObject, float amount, bool constructing)
         {
             timeSinceLastConstructionChangeEvent += Time.deltaTime;
 
@@ -76,44 +88,39 @@ namespace NitroxClient.GameLogic
             timeSinceLastConstructionChangeEvent = 0.0f;
             
             string guid = GuidHelper.GetGuid(gameObject);
+            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
 
             if (amount < 0.95f) // Construction complete event handled by function below
             {
-                ConstructionAmountChanged amountChanged = new ConstructionAmountChanged(guid, amount);
+                ConstructionAmountChanged amountChanged = new ConstructionAmountChanged(guid, parentGuid, amount, constructing);
                 packetSender.Send(amountChanged);
             }
         }
 
         public void ConstructionComplete(GameObject gameObject)
         {
-            Optional<string> newlyConstructedBaseGuid = Optional<string>.Empty();
-            Optional<object> opConstructedBase = TransientLocalObjectManager.Get(TransientObjectType.BASE_GHOST_NEWLY_CONSTRUCTED_BASE_GAMEOBJECT);
-
-            if (opConstructedBase.IsPresent())
-            {
-                GameObject constructedBase = (GameObject)opConstructedBase.Get();
-                newlyConstructedBaseGuid = Optional<string>.Of(GuidHelper.GetGuid(constructedBase));
-            }
-            
             string guid = GuidHelper.GetGuid(gameObject);
+            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
 
-            ConstructionCompleted constructionCompleted = new ConstructionCompleted(guid, newlyConstructedBaseGuid);
+            ConstructionCompleted constructionCompleted = new ConstructionCompleted(guid, parentGuid);
             packetSender.Send(constructionCompleted);
         }
 
         public void DeconstructionBegin(GameObject gameObject)
         {
             string guid = GuidHelper.GetGuid(gameObject);
+            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
 
-            DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid);
+            DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid, parentGuid);
             packetSender.Send(deconstructionBegin);
         }
 
         public void DeconstructionComplete(GameObject gameObject)
         {
             string guid = GuidHelper.GetGuid(gameObject);
+            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
 
-            DeconstructionCompleted deconstructionCompleted = new DeconstructionCompleted(guid);
+            DeconstructionCompleted deconstructionCompleted = new DeconstructionCompleted(guid, parentGuid);
             packetSender.Send(deconstructionCompleted);
         }
     }

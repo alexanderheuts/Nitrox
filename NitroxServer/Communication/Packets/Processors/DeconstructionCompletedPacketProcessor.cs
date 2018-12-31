@@ -18,7 +18,7 @@ namespace NitroxServer.Communication.Packets.Processors
 
         public override void Process(DeconstructionCompleted packet, Player player)
         {
-            baseData.BasePieceDeconstructionCompleted(packet.Guid);
+            baseData.BasePieceDeconstructionCompleted(packet.Guid, packet.ParentGuid);
             playerManager.SendPacketToOtherPlayers(packet, player);
         }
     }

@@ -28,6 +28,7 @@ namespace NitroxClient.Communication.Packets.Processors
 
         public InitialPlayerSyncProcessor(IPacketSender packetSender, BuildThrottlingQueue buildEventQueue, Vehicles vehicles, ItemContainers itemContainers, EquipmentSlots equipment, PlayerManager remotePlayerManager)
         {
+            Log.Debug("InitialPlayerSyncProcessor::Constructor");
             this.packetSender = packetSender;
             this.buildEventQueue = buildEventQueue;
             this.vehicles = vehicles;
@@ -38,6 +39,7 @@ namespace NitroxClient.Communication.Packets.Processors
 
         public override void Process(InitialPlayerSync packet)
         {
+            Log.Debug("Processing InitialPlayerSync-packet");
             SetPlayerGuid(packet.PlayerGuid);
             SpawnVehicles(packet.Vehicles);
             SpawnPlayerEquipment(packet.EquippedItems); //Need Set Equipment On Vehicles before SpawnItemContainer because is Locker Is a Upgrade (VehicleStorageModule Seamoth / Prawn)
@@ -55,6 +57,8 @@ namespace NitroxClient.Communication.Packets.Processors
             SpawnInventoryItemsAfterBasePiecesFinish(packet.InventoryItems, hasBasePiecesToSpawn);
             SpawnRemotePlayersAfterBasePiecesFinish(packet.RemotePlayerData, hasBasePiecesToSpawn);
             SetPlayerLocationAfterBasePiecesFinish(packet.PlayerSpawnData, packet.PlayerSubRootGuid, hasBasePiecesToSpawn);
+
+            Log.Debug("Finished InitialPlayerSync-packet");
         }
 
         private void SetPDALog(List<PDALogEntry> logEntries)
@@ -172,17 +176,17 @@ namespace NitroxClient.Communication.Packets.Processors
             using (packetSender.Suppress<ConstructionCompleted>())
             using (packetSender.Suppress<PlaceBasePiece>())
             {
-                foreach (BasePiece basePiece in basePieces)
+                foreach (BasePiece bp in basePieces)
                 {
-                    buildEventQueue.EnqueueBasePiecePlaced(basePiece);
+                    buildEventQueue.EnqueueBasePiecePlaced(bp);
 
-                    if (basePiece.ConstructionCompleted)
+                    if (bp.ConstructionCompleted)
                     {
-                        buildEventQueue.EnqueueConstructionCompleted(basePiece.Guid, basePiece.NewBaseGuid);
+                        buildEventQueue.EnqueueConstructionCompleted(bp.Guid, bp.ParentGuid);
                     }
                     else
                     {
-                        buildEventQueue.EnqueueAmountChanged(basePiece.Guid, basePiece.ConstructionAmount);
+                        buildEventQueue.EnqueueAmountChanged(bp.Guid, bp.ParentGuid, bp.ConstructionAmount);
                     }
                 }
             }

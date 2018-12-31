@@ -3,6 +3,7 @@ using NitroxClient.Communication.Abstract;
 using NitroxClient.MonoBehaviours.Gui.InGame;
 using NitroxModel.Logger;
 using NitroxModel.Packets;
+using System;
 using System.IO;
 using System.Threading;
 
@@ -68,8 +69,15 @@ namespace NitroxClient.Communication
                     case NetIncomingMessageType.Data:
                         if (im.Data.Length > 0)
                         {
-                            Packet packet = Packet.Deserialize(im.Data);
-                            packetReceiver.PacketReceived(packet);
+                            try
+                            {
+                                Packet packet = Packet.Deserialize(im.Data);
+                                packetReceiver.PacketReceived(packet);
+                            }
+                            catch(Exception e)
+                            {
+                                Log.Debug("ReceivedMessage Failure:", e.ToString());
+                            }
                         }
                         break;
                     default:

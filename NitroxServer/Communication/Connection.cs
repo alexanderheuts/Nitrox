@@ -2,6 +2,7 @@
 using NitroxModel.Packets;
 using NitroxModel.Packets.Processors.Abstract;
 using Lidgren.Network;
+using System;
 
 namespace NitroxServer.Communication
 {
@@ -20,11 +21,18 @@ namespace NitroxServer.Communication
         {
             if (connection.Status == NetConnectionStatus.Connected)
             {
-                byte[] packetData = packet.Serialize();
-                NetOutgoingMessage om = server.CreateMessage();
-                om.Write(packetData);
+                try
+                {
+                    byte[] packetData = packet.Serialize();
+                    NetOutgoingMessage om = server.CreateMessage();
+                    om.Write(packetData);
 
-                connection.SendMessage(om, packet.DeliveryMethod, (int)packet.UdpChannel);
+                    connection.SendMessage(om, packet.DeliveryMethod, (int)packet.UdpChannel);
+                }
+                catch(Exception e)
+                {
+                    Log.Error("SendPacket failure: ", e.ToString());
+                }
             }
             else
             {

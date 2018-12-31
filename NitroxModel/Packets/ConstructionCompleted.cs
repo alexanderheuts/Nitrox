@@ -8,17 +8,17 @@ namespace NitroxModel.Packets
     public class ConstructionCompleted : Packet
     {
         public string Guid { get; }
-        public Optional<string> NewBaseCreatedGuid { get; }
+        public string ParentGuid { get; }
 
-        public ConstructionCompleted(string guid, Optional<string> newBaseCreatedGuid)
+        public ConstructionCompleted(string guid, string parentGuid)
         {
             Guid = guid;
-            NewBaseCreatedGuid = newBaseCreatedGuid;
+            ParentGuid = parentGuid;
         }
 
         public override string ToString()
         {
-            return "[ConstructionCompleted Guid: " + Guid + " NewBaseCreatedGuid: " + NewBaseCreatedGuid + "]";
+            return string.Format("[ConstructionCompleted Guid={0} ParentGUID={1}]", Guid, ParentGuid);
         }
     }
 }

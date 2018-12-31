@@ -7,15 +7,17 @@ namespace NitroxModel.Packets
     public class DeconstructionBegin : Packet
     {
         public string Guid { get; }
+        public string ParentGuid { get; }
 
-        public DeconstructionBegin(string guid)
+        public DeconstructionBegin(string guid, string parentGuid)
         {
             Guid = guid;
+            ParentGuid = parentGuid;
         }
 
         public override string ToString()
         {
-            return "[DeconstructionBegin Guid: " + Guid + "]";
+            return string.Format("[DeconstructionBegin Guid={0} ParentGUID={1}]", Guid, ParentGuid);
         }
     }
 }

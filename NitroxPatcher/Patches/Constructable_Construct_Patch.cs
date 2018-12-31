@@ -15,7 +15,7 @@ namespace NitroxPatcher.Patches
         {
             if (!__instance._constructed && __instance.constructedAmount < 1.0f)
             {
-                NitroxServiceLocator.LocateService<Building>().ChangeConstructionAmount(__instance.gameObject, __instance.constructedAmount);
+                NitroxServiceLocator.LocateService<Building>().ChangeConstructionAmount(__instance.gameObject, __instance.constructedAmount, true);
             }
 
             return true;

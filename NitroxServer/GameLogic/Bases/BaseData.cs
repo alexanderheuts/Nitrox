@@ -1,5 +1,6 @@
 ﻿using NitroxModel.DataStructures.GameLogic;
 using NitroxModel.DataStructures.Util;
+using NitroxModel.Logger;
 using ProtoBufNet;
 using System.Collections.Generic;
 
@@ -8,12 +9,15 @@ namespace NitroxServer.GameLogic.Bases
     [ProtoContract]
     public class BaseData
     {
+        [ProtoIgnore]
+        private object changeLock = new object();
+
         [ProtoMember(1)]
         public Dictionary<string, BasePiece> SerializableBasePiecesByGuid
         {
             get
             {
-                lock (basePiecesByGuid)
+                lock (changeLock)
                 {
                     return new Dictionary<string, BasePiece>(basePiecesByGuid);
                 }
@@ -22,13 +26,13 @@ namespace NitroxServer.GameLogic.Bases
         }
 
         [ProtoMember(2)]
-        public List<BasePiece> SerializableCompletedBasePieceHistory
+        public Dictionary<string, BasePiece> SerializableCompletedBasePieceHistory
         {
             get
             {
-                lock (completedBasePieceHistory)
+                lock (changeLock)
                 {
-                    return new List<BasePiece>(completedBasePieceHistory);
+                    return new Dictionary<string, BasePiece>(completedBasePieceHistory);
                 }
             }
             set { completedBasePieceHistory = value; }
@@ -38,61 +42,60 @@ namespace NitroxServer.GameLogic.Bases
         private Dictionary<string, BasePiece> basePiecesByGuid = new Dictionary<string, BasePiece>();
 
         [ProtoIgnore]
-        private List<BasePiece> completedBasePieceHistory = new List<BasePiece>();
+        private Dictionary<string, BasePiece> completedBasePieceHistory = new Dictionary<string, BasePiece>();
 
         public void AddBasePiece(BasePiece basePiece)
         {
-            lock(basePiecesByGuid)
+            lock(changeLock)
             {
-                basePiecesByGuid.Add(basePiece.Guid, basePiece);
+                Log.Debug("AddBasePiece GUID={0} ParentGUID={1} BaseGUID={2}", basePiece.Guid, basePiece.ParentGuid, basePiece.BaseGuid);
+                DebugOutput();
+                basePiecesByGuid.Add(basePiece.ParentGuid, basePiece);
+                Log.Debug("AddBasePiece done.");
+                DebugOutput();
             }
         }
 
-        public void BasePieceConstructionAmountChanged(string guid, float constructionAmount)
+        public void BasePieceConstructionAmountChanged(string guid, string parentGuid, float constructionAmount, bool constructing)
         {
             BasePiece basePiece;
 
-            lock (basePiecesByGuid)
+            lock (changeLock)
             {
-                if (basePiecesByGuid.TryGetValue(guid, out basePiece))
+                if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
                 {
                     basePiece.ConstructionAmount = constructionAmount;
                 }
             }
         }
 
-        public void BasePieceConstructionCompleted(string guid, Optional<string> newlyCreatedParentGuid)
+        public void BasePieceConstructionCompleted(string guid, string parentGuid)
         {
             BasePiece basePiece;
 
-            lock (basePiecesByGuid)
+            lock (changeLock)
             {
-                if (basePiecesByGuid.TryGetValue(guid, out basePiece))
+                if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
                 {
+                    Log.Debug("BasePieceConstructionCompleted GUID={0} ParentGUID={1} BaseGUID={2}", basePiece.Guid, basePiece.ParentGuid, basePiece.BaseGuid);
+                    DebugOutput();
                     basePiece.ConstructionAmount = 1.0f;
-                    basePiece.ConstructionCompleted = true;
-                    basePiece.NewBaseGuid = newlyCreatedParentGuid;
+                    basePiece.ConstructionCompleted = true;                    
 
-                    if (newlyCreatedParentGuid.IsPresent())
-                    {
-                        basePiece.ParentGuid = Optional<string>.Empty();
-                    }
-
-                    lock(completedBasePieceHistory)
-                    {
-                        completedBasePieceHistory.Add(basePiece);
-                    }
+                    completedBasePieceHistory.Add(parentGuid, basePiece);
+                    Log.Debug("BasePieceConstructionCompleted done.");
+                    DebugOutput();
                 }
             }
         }
 
-        public void BasePieceDeconstructionBegin(string guid)
+        public void BasePieceDeconstructionBegin(string guid, string parentGuid)
         {
             BasePiece basePiece;
 
-            lock (basePiecesByGuid)
+            lock (changeLock)
             {
-                if (basePiecesByGuid.TryGetValue(guid, out basePiece))
+                if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
                 {
                     basePiece.ConstructionAmount = 0.95f;
                     basePiece.ConstructionCompleted = false;
@@ -100,46 +103,62 @@ namespace NitroxServer.GameLogic.Bases
             }
         }
 
-        public void BasePieceDeconstructionCompleted(string guid)
+        public void BasePieceDeconstructionCompleted(string guid, string parentGuid)
         {
             BasePiece basePiece;
-            lock (basePiecesByGuid)
+            lock (changeLock)
             {
-                if (basePiecesByGuid.TryGetValue(guid, out basePiece))
+                if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
                 {
-                    lock(completedBasePieceHistory)
-                    {
-                        completedBasePieceHistory.Remove(basePiece);
-                    }
+                    completedBasePieceHistory.Remove(parentGuid);
 
-                    basePiecesByGuid.Remove(guid);
+                    basePiecesByGuid.Remove(parentGuid);
                 }
             }
         }
 
         public List<BasePiece> GetBasePiecesForNewlyConnectedPlayer()
         {
-            List<BasePiece> basePieces;
+            List<BasePiece> basePieces = new List<BasePiece>();
             
-            lock(completedBasePieceHistory)
+            lock(changeLock)
             {
                 // Play back all completed base pieces first (other pieces have a dependency on these being done)
-                basePieces = new List<BasePiece>(completedBasePieceHistory);
-            }
-
-            lock(basePiecesByGuid)
-            {
-                // Play back pieces that may not be completed yet.
-                foreach (BasePiece basePiece in basePiecesByGuid.Values)
+                foreach (KeyValuePair<string, BasePiece> kvp in completedBasePieceHistory)
                 {
-                    if (!basePieces.Contains(basePiece))
+                    basePieces.Add(kvp.Value);
+                }
+
+                // Play back pieces that may not be completed yet.
+                foreach (KeyValuePair<string, BasePiece> kvp in basePiecesByGuid)
+                {
+                    // If the basePiece is not in the completedHistory we should assume it can be added
+                    if (!completedBasePieceHistory.ContainsKey(kvp.Key))
                     {
-                        basePieces.Add(basePiece);
+                        basePieces.Add(kvp.Value);
                     }
                 }
             }
 
             return basePieces;
+        }
+
+        private void DebugOutput()
+        {
+            Log.Debug("BaseData Debugger");
+            Log.Debug("BaseData history count={0} total piece count={1}", completedBasePieceHistory.Count, basePiecesByGuid.Count);
+
+            Log.Debug("BaseData History");
+            foreach(KeyValuePair<string, BasePiece> kvp in completedBasePieceHistory)
+            {
+                Log.Debug("BasePiece with KEY={0} GUID={1} ParentGUID={2} BaseGUID={3} Type={4}", kvp.Key, kvp.Value.Guid, kvp.Value.ParentGuid, kvp.Value.BaseGuid, kvp.Value.TechType);
+            }
+
+            Log.Debug("BaseData All Pieces");
+            foreach (KeyValuePair<string, BasePiece> kvp in basePiecesByGuid)
+            {
+                Log.Debug("BasePiece with KEY={0} GUID={1} ParentGUID={2} BaseGUID={3} Type={4}", kvp.Key, kvp.Value.Guid, kvp.Value.ParentGuid, kvp.Value.BaseGuid, kvp.Value.TechType);
+            }
         }
     }
 }

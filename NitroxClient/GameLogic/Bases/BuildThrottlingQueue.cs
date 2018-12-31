@@ -28,32 +28,32 @@ namespace NitroxClient.GameLogic.Bases
 
         public void EnqueueBasePiecePlaced(BasePiece basePiece)
         {
-            Log.Info("Enqueuing base piece to be placed " + basePiece.Guid + " " + basePiece.Guid);
+            Log.Info("Enqueuing base piece to be placed GUID={0} ParentGUID={1} BaseGUID={2}", basePiece.Guid, basePiece.ParentGuid, basePiece.BaseGuid );
             Enqueue(new BasePiecePlacedEvent(basePiece));
         }
 
-        public void EnqueueConstructionCompleted(string guid, Optional<string> newBaseCreatedGuid)
+        public void EnqueueConstructionCompleted(string guid, string parentGuid)
         {
-            Log.Info("Enqueuing item to have construction completed " + guid);
-            Enqueue(new ConstructionCompletedEvent(guid, newBaseCreatedGuid));
+            Log.Info("Enqueuing item to have construction completed GUID={0} ParentGUID={1}", guid, parentGuid);
+            Enqueue(new ConstructionCompletedEvent(guid, parentGuid));
         }
 
-        public void EnqueueAmountChanged(string guid, float amount)
+        public void EnqueueAmountChanged(string guid, string parentGuid, float amount)
         {
-            Log.Info("Enqueuing item to have construction amount changed " + guid);
-            Enqueue(new ConstructionAmountChangedEvent(guid, amount));
+            Log.Info("Enqueuing item to have construction amount changed GUID={0} ParentGUID={1}", guid, parentGuid);
+            Enqueue(new ConstructionAmountChangedEvent(guid, parentGuid, amount));
         }
 
-        public void EnqueueDeconstructionBegin(string guid)
+        public void EnqueueDeconstructionBegin(string guid, string parentGuid)
         {
-            Log.Info("Enqueuing item to have deconstruction beginning " + guid);
-            Enqueue(new DeconstructionBeginEvent(guid));
+            Log.Info("Enqueuing item to have deconstruction beginning GUID={0} ParentGUID={1}", guid, parentGuid);
+            Enqueue(new DeconstructionBeginEvent(guid, parentGuid));
         }
 
-        public void EnqueueDeconstructionCompleted(string guid)
+        public void EnqueueDeconstructionCompleted(string guid, string parentGuid)
         {
-            Log.Info("Enqueuing item to have deconstruction completed " + guid);
-            Enqueue(new DeconstructionCompletedEvent(guid));
+            Log.Info("Enqueuing item to have deconstruction completed GUID={0} ParentGUID={1}", guid, parentGuid);
+            Enqueue(new DeconstructionCompletedEvent(guid, parentGuid));
         }
     }
 
@@ -77,11 +77,13 @@ namespace NitroxClient.GameLogic.Bases
     public class ConstructionAmountChangedEvent : BuildEvent
     {
         public string Guid { get; }
+        public string ParentGuid { get; }
         public float Amount { get; }
 
-        public ConstructionAmountChangedEvent(string guid, float amount)
+        public ConstructionAmountChangedEvent(string guid, string parentGuid, float amount)
         {
             Guid = guid;
+            ParentGuid = parentGuid;
             Amount = amount;
         }
 
@@ -97,12 +99,13 @@ namespace NitroxClient.GameLogic.Bases
     public class ConstructionCompletedEvent : BuildEvent
     {
         public string Guid { get; }
-        public Optional<string> NewBaseCreatedGuid { get; }
+        public string ParentGuid { get; }
+        public string BaseGuid { get; }
 
-        public ConstructionCompletedEvent(string guid, Optional<string> newBaseCreatedGuid)
+        public ConstructionCompletedEvent(string guid, string parentGuid)
         {
             Guid = guid;
-            NewBaseCreatedGuid = newBaseCreatedGuid;
+            ParentGuid = parentGuid;
         }
 
         public bool RequiresFreshFrame()
@@ -116,10 +119,12 @@ namespace NitroxClient.GameLogic.Bases
     public class DeconstructionBeginEvent : BuildEvent
     {
         public string Guid { get; }
+        public string ParentGuid { get; }
 
-        public DeconstructionBeginEvent(string guid)
+        public DeconstructionBeginEvent(string guid, string parentGuid)
         {
             Guid = guid;
+            ParentGuid = parentGuid;
         }
 
         public bool RequiresFreshFrame()
@@ -134,10 +139,12 @@ namespace NitroxClient.GameLogic.Bases
     public class DeconstructionCompletedEvent : BuildEvent
     {
         public string Guid { get; }
+        public string ParentGuid { get; }
 
-        public DeconstructionCompletedEvent(string guid)
+        public DeconstructionCompletedEvent(string guid, string parentGuid)
         {
             Guid = guid;
+            ParentGuid = parentGuid;
         }
 
         public bool RequiresFreshFrame()

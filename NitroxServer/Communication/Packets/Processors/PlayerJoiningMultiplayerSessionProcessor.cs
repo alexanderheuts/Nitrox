@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using NitroxModel.DataStructures.GameLogic;
 using NitroxModel.Packets;
+using NitroxModel.Logger;
 using NitroxServer.Communication.Packets.Processors.Abstract;
 using NitroxServer.GameLogic;
 using NitroxServer.Serialization.World;
@@ -37,6 +38,7 @@ namespace NitroxServer.Communication.Packets.Processors
             PlayerJoinedMultiplayerSession playerJoinedPacket = new PlayerJoinedMultiplayerSession(player.PlayerContext);
             playerManager.SendPacketToOtherPlayers(playerJoinedPacket, player);
 
+            Log.Debug("Preparing InitialPlayerSync-packet");
             InitialPlayerSync initialPlayerSync = new InitialPlayerSync(player.Id.ToString(),
                                                                        world.PlayerData.GetEquippedItemsForInitialSync(player.Name),
                                                                        world.BaseData.GetBasePiecesForNewlyConnectedPlayer(),
@@ -48,7 +50,9 @@ namespace NitroxServer.Communication.Packets.Processors
                                                                        world.PlayerData.Stats(player.Name),
                                                                        getRemotePlayerData(player));
 
+            Log.Debug("Ready to send InitialPlayerSync-packet");
             player.SendPacket(initialPlayerSync);
+            Log.Debug("Sent InitialPlayerSync-packet");
         }
 
         private List<InitialRemotePlayerData> getRemotePlayerData(Player player)
