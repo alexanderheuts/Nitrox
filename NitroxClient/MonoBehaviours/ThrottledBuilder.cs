@@ -5,7 +5,6 @@ using NitroxClient.MonoBehaviours.Overrides;
 using NitroxClient.Unity.Helper;
 using NitroxModel.Core;
 using NitroxModel.DataStructures.GameLogic;
-using NitroxModel.DataStructures.Util;
 using NitroxModel.Helper;
 using NitroxModel.Logger;
 using NitroxModel.Packets;
@@ -87,10 +86,6 @@ namespace NitroxClient.MonoBehaviours
             {
                 BuildBasePiece((BasePiecePlacedEvent)buildEvent);
             }
-            else if (buildEvent is ConstructionCompletedEvent)
-            {
-                ConstructionCompleted((ConstructionCompletedEvent)buildEvent);
-            }
             else if (buildEvent is ConstructionAmountChangedEvent)
             {
                 ConstructionAmountChanged((ConstructionAmountChangedEvent)buildEvent);
@@ -102,6 +97,10 @@ namespace NitroxClient.MonoBehaviours
             else if (buildEvent is DeconstructionCompletedEvent)
             {
                 DeconstructionCompleted((DeconstructionCompletedEvent)buildEvent);
+            }
+            else if (buildEvent is SetStateEvent)
+            {
+                SetState((SetStateEvent)buildEvent);
             }
         }
 
@@ -166,25 +165,6 @@ namespace NitroxClient.MonoBehaviours
             startCrafting.Invoke(constructable, new object[] { });
         }
 
-        private void ConstructionCompleted(ConstructionCompletedEvent constructionCompleted)
-        {
-            GameObject constructing = GuidHelper.RequireObjectFrom(constructionCompleted.ParentGuid);
-            Constructable constructable = constructing.GetComponentInChildren<Constructable>();
-            constructable.constructedAmount = 1f;
-            constructable.SetState(true, true);
-
-            // Confirm the parent GameObject has the correct GUID
-            GameObject localParent = constructable.transform.parent.gameObject;
-            string localParentGuid = GuidHelper.GetGuid(localParent);
-
-            if(localParentGuid != constructionCompleted.ParentGuid)
-            {
-                GuidHelper.SetNewGuid(localParent, constructionCompleted.ParentGuid);
-                Log.Debug("ConstructionCompleted::Setting new ParentGUID={0} to replace existing ParentGUID={1}", constructionCompleted.ParentGuid, localParentGuid);
-            }
-
-        }
-
         private void ConstructionAmountChanged(ConstructionAmountChangedEvent amountChanged)
         {
             Log.Debug("Processing ConstructionAmountChanged Guid={0} ParentGUID={1} AmountChanged={2}", amountChanged.Guid, amountChanged.ParentGuid, amountChanged.Amount);
@@ -201,18 +181,74 @@ namespace NitroxClient.MonoBehaviours
 
         private void DeconstructionBegin(DeconstructionBeginEvent begin)
         {
-            // We need to find the correct constructable based on the parent gameobject.
             GameObject deconstructing = GuidHelper.RequireObjectFrom(begin.ParentGuid);
-            Constructable constructable = deconstructing.RequireComponent<Constructable>();
 
-            constructable.SetState(false, false);
+            using (packetSender.Suppress<DeconstructionBegin>())
+            {
+                using (packetSender.Suppress<SetState>())
+                {
+                    if (begin.GameObjectType == typeof(Constructable))
+                    {
+                        // We're dealing with a Constructable. Which triggers deconstruction via SetState(false, false).
+                        Constructable constructable = deconstructing.GetComponentInChildren<Constructable>();
+
+                        constructable.SetState(false, false);
+                    }
+                    else
+                    {
+                        // We're dealing with either BaseDeconstructable or BaseExplicitFace. 
+                        // Both resolve with the same method Deconstruct().
+                        BaseDeconstructable baseDeconstructable = null;
+                        if (begin.GameObjectType == typeof(BaseDeconstructable))
+                        {
+                            baseDeconstructable = deconstructing.GetComponentInChildren<BaseDeconstructable>();
+                        }
+                        else
+                        {
+                            BaseExplicitFace bef = deconstructing.GetComponentInChildren<BaseExplicitFace>();
+                            baseDeconstructable = bef.parent;
+                        }
+
+                        baseDeconstructable.Deconstruct();
+                    }
+                }
+            }
         }
 
         private void DeconstructionCompleted(DeconstructionCompletedEvent completed)
         {
+            Log.Debug("Processing DeconstructionCompleted Guid={0} ParentGUID={1}", completed.Guid, completed.ParentGuid);
             // We destroy the parent of the constructable, not just the constructable
             GameObject deconstructing = GuidHelper.RequireObjectFrom(completed.ParentGuid);
-            UnityEngine.Object.Destroy(deconstructing);
+            Log.Debug("Parent to be deconstructed is of type {0}", deconstructing.GetType().ToString());
+            Constructable constructable = deconstructing.GetComponentInChildren<Constructable>();
+
+            // In case we missed the DeconstructionBegin, make sure the game knows it's being deconstructed
+            constructable.SetState(false, false);
+
+            constructable.constructedAmount = 0f;
+            constructable.Deconstruct();
+
+            //UnityEngine.Object.Destroy(deconstructing);
+        }
+
+        private void SetState(SetStateEvent setState)
+        {
+            GameObject goSetStateParent = GuidHelper.RequireObjectFrom(setState.ParentGuid);
+
+            using (packetSender.Suppress<SetState>())
+            {
+                if (setState.GameObjectType == typeof(Constructable))
+                {
+                    Constructable c = goSetStateParent.GetComponentInChildren<Constructable>();
+                    c.SetState(setState.Value, setState.SetAmount);
+                }
+                else if (setState.GameObjectType == typeof(ConstructableBase))
+                {
+                    ConstructableBase cb = goSetStateParent.GetComponentInChildren<ConstructableBase>();
+                    cb.SetState(setState.Value, setState.SetAmount);
+                }
+            }
         }
     }
 }

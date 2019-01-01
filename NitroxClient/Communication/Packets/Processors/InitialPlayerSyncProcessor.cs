@@ -173,20 +173,17 @@ namespace NitroxClient.Communication.Packets.Processors
             Log.Info("Received initial sync packet with " + basePieces.Count + " base pieces");
 
             using (packetSender.Suppress<ConstructionAmountChanged>())
-            using (packetSender.Suppress<ConstructionCompleted>())
-            using (packetSender.Suppress<PlaceBasePiece>())
             {
-                foreach (BasePiece bp in basePieces)
+                using (packetSender.Suppress<PlaceBasePiece>())
                 {
-                    buildEventQueue.EnqueueBasePiecePlaced(bp);
+                    foreach (BasePiece bp in basePieces)
+                    {
+                        buildEventQueue.EnqueueBasePiecePlaced(bp);
 
-                    if (bp.ConstructionCompleted)
-                    {
-                        buildEventQueue.EnqueueConstructionCompleted(bp.Guid, bp.ParentGuid);
-                    }
-                    else
-                    {
-                        buildEventQueue.EnqueueAmountChanged(bp.Guid, bp.ParentGuid, bp.ConstructionAmount);
+                        if (!bp.ConstructionCompleted)
+                        {
+                            buildEventQueue.EnqueueAmountChanged(bp.Guid, bp.ParentGuid, bp.ConstructionAmount);
+                        }
                     }
                 }
             }

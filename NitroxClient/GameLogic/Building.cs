@@ -3,7 +3,7 @@ using NitroxClient.GameLogic.Helper;
 using NitroxModel.DataStructures.GameLogic;
 using NitroxModel.DataStructures.GameLogic.Buildings;
 using NitroxModel.DataStructures.Util;
-using NitroxModel.Helper;
+using NitroxModel.Logger;
 using NitroxModel.Packets;
 using UnityEngine;
 using System;
@@ -90,28 +90,20 @@ namespace NitroxClient.GameLogic
             string guid = GuidHelper.GetGuid(gameObject);
             string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
 
-            if (amount < 0.95f) // Construction complete event handled by function below
+            if (0.05f < amount && amount < 0.95f) // Deconstruction / Construction complete event handled by function below
             {
                 ConstructionAmountChanged amountChanged = new ConstructionAmountChanged(guid, parentGuid, amount, constructing);
                 packetSender.Send(amountChanged);
             }
         }
 
-        public void ConstructionComplete(GameObject gameObject)
+        public void DeconstructionBegin(GameObject gameObject, Type goType)
         {
             string guid = GuidHelper.GetGuid(gameObject);
             string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
+            Log.Debug("DeconstructionBegin triggered. GameObjectType={0} GUID={1} ParentGUID={2}", gameObject.GetType().ToString(), guid, parentGuid);
 
-            ConstructionCompleted constructionCompleted = new ConstructionCompleted(guid, parentGuid);
-            packetSender.Send(constructionCompleted);
-        }
-
-        public void DeconstructionBegin(GameObject gameObject)
-        {
-            string guid = GuidHelper.GetGuid(gameObject);
-            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
-
-            DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid, parentGuid);
+            DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid, parentGuid, goType);
             packetSender.Send(deconstructionBegin);
         }
 
@@ -122,6 +114,15 @@ namespace NitroxClient.GameLogic
 
             DeconstructionCompleted deconstructionCompleted = new DeconstructionCompleted(guid, parentGuid);
             packetSender.Send(deconstructionCompleted);
+        }
+
+        public void SetState(GameObject gameObject, Type goType, bool value, bool setAmount)
+        {
+            string guid = GuidHelper.GetGuid(gameObject);
+            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
+
+            SetState setState = new SetState(guid, parentGuid, goType, value, setAmount);
+            packetSender.Send(setState);
         }
     }
 }

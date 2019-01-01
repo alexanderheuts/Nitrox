@@ -2,6 +2,7 @@
 using NitroxModel.DataStructures.Util;
 using NitroxModel.Logger;
 using ProtoBufNet;
+using System;
 using System.Collections.Generic;
 
 namespace NitroxServer.GameLogic.Bases
@@ -48,11 +49,7 @@ namespace NitroxServer.GameLogic.Bases
         {
             lock(changeLock)
             {
-                Log.Debug("AddBasePiece GUID={0} ParentGUID={1} BaseGUID={2}", basePiece.Guid, basePiece.ParentGuid, basePiece.BaseGuid);
-                DebugOutput();
                 basePiecesByGuid.Add(basePiece.ParentGuid, basePiece);
-                Log.Debug("AddBasePiece done.");
-                DebugOutput();
             }
         }
 
@@ -69,26 +66,6 @@ namespace NitroxServer.GameLogic.Bases
             }
         }
 
-        public void BasePieceConstructionCompleted(string guid, string parentGuid)
-        {
-            BasePiece basePiece;
-
-            lock (changeLock)
-            {
-                if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
-                {
-                    Log.Debug("BasePieceConstructionCompleted GUID={0} ParentGUID={1} BaseGUID={2}", basePiece.Guid, basePiece.ParentGuid, basePiece.BaseGuid);
-                    DebugOutput();
-                    basePiece.ConstructionAmount = 1.0f;
-                    basePiece.ConstructionCompleted = true;                    
-
-                    completedBasePieceHistory.Add(parentGuid, basePiece);
-                    Log.Debug("BasePieceConstructionCompleted done.");
-                    DebugOutput();
-                }
-            }
-        }
-
         public void BasePieceDeconstructionBegin(string guid, string parentGuid)
         {
             BasePiece basePiece;
@@ -98,7 +75,8 @@ namespace NitroxServer.GameLogic.Bases
                 if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
                 {
                     basePiece.ConstructionAmount = 0.95f;
-                    basePiece.ConstructionCompleted = false;
+
+                    completedBasePieceHistory.Remove(parentGuid);
                 }
             }
         }
@@ -110,9 +88,34 @@ namespace NitroxServer.GameLogic.Bases
             {
                 if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
                 {
-                    completedBasePieceHistory.Remove(parentGuid);
-
                     basePiecesByGuid.Remove(parentGuid);
+                }
+            }
+        }
+
+        public void BasePieceSetState(string guid, string parentGuid, Type goType, bool value, bool setAmount)
+        {
+            BasePiece basePiece;
+            lock (changeLock)
+            {
+                if(basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
+                {
+                    if(basePiece.ConstructionCompleted == value)
+                    {
+                        // We're not changing the state, as it's already set.
+                        return;
+                    }
+
+                    basePiece.ConstructionCompleted = value;
+                    if(setAmount)
+                    {
+                        basePiece.ConstructionAmount = (!basePiece.ConstructionCompleted) ? 0f : 1f;
+                    }
+
+                    if(basePiece.ConstructionCompleted)
+                    {
+                        completedBasePieceHistory.Add(parentGuid, basePiece);
+                    }
                 }
             }
         }

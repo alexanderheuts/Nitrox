@@ -13,7 +13,7 @@ namespace NitroxPatcher.Patches
 
         public static bool Prefix(Constructable __instance)
         {
-            if (!__instance._constructed && __instance.constructedAmount < 1.0f)
+            if (!__instance._constructed && __instance.constructedAmount < 1.0f && __instance.constructedAmount > 0f)
             {
                 NitroxServiceLocator.LocateService<Building>().ChangeConstructionAmount(__instance.gameObject, __instance.constructedAmount, true);
             }
@@ -21,17 +21,9 @@ namespace NitroxPatcher.Patches
             return true;
         }
 
-        public static void Postfix(Constructable __instance, bool __result)
-        {
-            if (__result && __instance.constructedAmount >= 1.0f)
-            {
-                NitroxServiceLocator.LocateService<Building>().ConstructionComplete(__instance.gameObject);
-            }
-        }
-
         public override void Patch(HarmonyInstance harmony)
         {
-            PatchMultiple(harmony, TARGET_METHOD, true, true, false);
+            PatchPrefix(harmony, TARGET_METHOD);
         }
     }
 }

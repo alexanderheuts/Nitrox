@@ -1,16 +1,21 @@
 ﻿using NitroxClient.Communication.Packets.Processors.Abstract;
-using NitroxClient.GameLogic.Helper;
+using NitroxClient.GameLogic.Bases;
 using NitroxModel.Packets;
-using UnityEngine;
 
 namespace NitroxClient.Communication.Packets.Processors
 {
     public class DeconstructionCompletedProcessor : ClientPacketProcessor<DeconstructionCompleted>
     {
+        private BuildThrottlingQueue buildEventQueue;
+
+        public DeconstructionCompletedProcessor(BuildThrottlingQueue buildEventQueue)
+        {
+            this.buildEventQueue = buildEventQueue;
+        }
+
         public override void Process(DeconstructionCompleted packet)
         {
-            GameObject deconstructing = GuidHelper.RequireObjectFrom(packet.Guid);
-            UnityEngine.Object.Destroy(deconstructing);
+            buildEventQueue.EnqueueDeconstructionCompleted(packet.Guid, packet.ParentGuid);
         }
     }
 }

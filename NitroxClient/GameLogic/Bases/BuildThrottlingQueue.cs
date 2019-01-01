@@ -1,6 +1,7 @@
 ﻿using NitroxModel.DataStructures.GameLogic;
 using NitroxModel.DataStructures.Util;
 using NitroxModel.Logger;
+using System;
 using System.Collections.Generic;
 
 namespace NitroxClient.GameLogic.Bases
@@ -32,28 +33,29 @@ namespace NitroxClient.GameLogic.Bases
             Enqueue(new BasePiecePlacedEvent(basePiece));
         }
 
-        public void EnqueueConstructionCompleted(string guid, string parentGuid)
-        {
-            Log.Info("Enqueuing item to have construction completed GUID={0} ParentGUID={1}", guid, parentGuid);
-            Enqueue(new ConstructionCompletedEvent(guid, parentGuid));
-        }
-
         public void EnqueueAmountChanged(string guid, string parentGuid, float amount)
         {
             Log.Info("Enqueuing item to have construction amount changed GUID={0} ParentGUID={1}", guid, parentGuid);
             Enqueue(new ConstructionAmountChangedEvent(guid, parentGuid, amount));
         }
 
-        public void EnqueueDeconstructionBegin(string guid, string parentGuid)
+        public void EnqueueDeconstructionBegin(string guid, string parentGuid, Type goType)
         {
             Log.Info("Enqueuing item to have deconstruction beginning GUID={0} ParentGUID={1}", guid, parentGuid);
-            Enqueue(new DeconstructionBeginEvent(guid, parentGuid));
+            Enqueue(new DeconstructionBeginEvent(guid, parentGuid, goType));
         }
 
         public void EnqueueDeconstructionCompleted(string guid, string parentGuid)
         {
             Log.Info("Enqueuing item to have deconstruction completed GUID={0} ParentGUID={1}", guid, parentGuid);
             Enqueue(new DeconstructionCompletedEvent(guid, parentGuid));
+        }
+
+        public void EnqueueSetState(string guid, string parentGuid, Type goType, bool value, bool setAmount)
+        {
+            Log.Info("Enqueuing item to have state changes GUID={0} ParentGUID={1} Type={2} Value={3} SetAmount={4}",
+                guid, parentGuid, goType.ToString(), value, setAmount);
+            Enqueue(new SetStateEvent(guid, parentGuid, goType, value, setAmount));
         }
     }
 
@@ -96,35 +98,17 @@ namespace NitroxClient.GameLogic.Bases
         }
     }
 
-    public class ConstructionCompletedEvent : BuildEvent
-    {
-        public string Guid { get; }
-        public string ParentGuid { get; }
-        public string BaseGuid { get; }
-
-        public ConstructionCompletedEvent(string guid, string parentGuid)
-        {
-            Guid = guid;
-            ParentGuid = parentGuid;
-        }
-
-        public bool RequiresFreshFrame()
-        {
-            // Completing construction changes the surrounding
-            // environment... We only want to process one per frame.
-            return true;
-        }
-    }
-
     public class DeconstructionBeginEvent : BuildEvent
     {
         public string Guid { get; }
         public string ParentGuid { get; }
+        public Type GameObjectType { get; }
 
-        public DeconstructionBeginEvent(string guid, string parentGuid)
+        public DeconstructionBeginEvent(string guid, string parentGuid, Type goType)
         {
             Guid = guid;
             ParentGuid = parentGuid;
+            GameObjectType = goType;
         }
 
         public bool RequiresFreshFrame()
@@ -151,6 +135,30 @@ namespace NitroxClient.GameLogic.Bases
         {
             // Completing a deconstruction will change the surrounding 
             // environment.  Thus, we want to only process one per frame.
+            return true;
+        }
+    }
+
+    public class SetStateEvent : BuildEvent
+    {
+        public string Guid { get; }
+        public string ParentGuid { get; }
+        public Type GameObjectType { get; }
+        public bool Value { get; }
+        public bool SetAmount { get; }
+
+        public SetStateEvent(string guid, string parentGuid, Type goType, bool value, bool setAmount)
+        {
+            Guid = guid;
+            ParentGuid = parentGuid;
+            GameObjectType = goType;
+            Value = value;
+            SetAmount = setAmount;
+        }
+
+        public bool RequiresFreshFrame()
+        {
+            // Changing the state of a piece changes the environment.
             return true;
         }
     }
