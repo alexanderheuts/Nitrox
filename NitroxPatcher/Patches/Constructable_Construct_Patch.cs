@@ -13,6 +13,12 @@ namespace NitroxPatcher.Patches
 
         public static bool Prefix(Constructable __instance)
         {
+            if(__instance is ConstructableBase)
+            {
+                // Check to make sure that we don't call ChangeConstructionAmount twice due to inheritance.
+                return true;
+            }
+
             if (!__instance._constructed && __instance.constructedAmount < 1.0f && __instance.constructedAmount > 0f)
             {
                 NitroxServiceLocator.LocateService<Building>().ChangeConstructionAmount(__instance.gameObject, typeof(Constructable), __instance.constructedAmount);

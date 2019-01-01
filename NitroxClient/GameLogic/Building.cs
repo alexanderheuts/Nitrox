@@ -4,6 +4,7 @@ using NitroxModel.DataStructures.GameLogic;
 using NitroxModel.DataStructures.GameLogic.Buildings;
 using NitroxModel.DataStructures.Util;
 using NitroxModel.Packets;
+using NitroxModel.Logger;
 using UnityEngine;
 using System;
 
@@ -99,7 +100,7 @@ namespace NitroxClient.GameLogic
         {
             string guid = GuidHelper.GetGuid(gameObject);
             string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
-
+            Log.Debug("Sending DeconstructionBegin Guid={0} ParentGuid={1} Type={2}", guid, parentGuid, goType);
             DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid, parentGuid, goType);
             packetSender.Send(deconstructionBegin);
         }
@@ -117,9 +118,10 @@ namespace NitroxClient.GameLogic
         {
             string guid = GuidHelper.GetGuid(gameObject);
             string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
-
+            Log.Debug("Client preparing to send setState for Guid={0} ParentGuid={1} goType={2} value={3} setAmount={4}", guid, parentGuid, goType, value, setAmount);
             SetState setState = new SetState(guid, parentGuid, goType, value, setAmount);
             packetSender.Send(setState);
+            Log.Debug("Client sent setState for Guid={0} ParentGuid={1} goType={2} value={3} setAmount={4}", guid, parentGuid, goType, value, setAmount);
         }
     }
 }

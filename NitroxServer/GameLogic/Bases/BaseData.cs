@@ -55,6 +55,7 @@ namespace NitroxServer.GameLogic.Bases
 
         public void BasePieceConstructionAmountChanged(string guid, string parentGuid, Type goType, float constructionAmount)
         {
+            Log.Debug("Trying to change ConstructionAmount for Guid={0} ParentGuid={1} Type={2} Amount={3}", guid, parentGuid, goType, constructionAmount);
             BasePiece basePiece;
 
             lock (changeLock)
@@ -83,6 +84,7 @@ namespace NitroxServer.GameLogic.Bases
 
         public void BasePieceDeconstructionCompleted(string guid, string parentGuid)
         {
+            Log.Debug("DeconstructionCompleted for Guid={0} ParentGuid={1}", guid, parentGuid);
             BasePiece basePiece;
             lock (changeLock)
             {
@@ -95,6 +97,7 @@ namespace NitroxServer.GameLogic.Bases
 
         public void BasePieceSetState(string guid, string parentGuid, Type goType, bool value, bool setAmount)
         {
+            Log.Debug("Trying to setState for Guid={0} ParentGuid={1} Type={2} Value={3} SetAmount={4}", guid, parentGuid, goType, value, setAmount);
             BasePiece basePiece;
             lock (changeLock)
             {
@@ -103,21 +106,25 @@ namespace NitroxServer.GameLogic.Bases
                     if(basePiece.ConstructionCompleted == value)
                     {
                         // We're not changing the state, as it's already set.
+                        Log.Debug("State already set, abort");
                         return;
                     }
 
                     basePiece.ConstructionCompleted = value;
                     if(setAmount)
                     {
+                        Log.Debug("Updating amount");
                         basePiece.ConstructionAmount = (!basePiece.ConstructionCompleted) ? 0f : 1f;
                     }
 
                     if(basePiece.ConstructionCompleted)
                     {
+                        Log.Debug("Construction Complete");
                         completedBasePieceHistory.Add(parentGuid, basePiece);
                     }
                     else
                     {
+                        Log.Debug("Deconstruction Complete");
                         basePiecesByGuid.Remove(parentGuid);
                     }
                 }

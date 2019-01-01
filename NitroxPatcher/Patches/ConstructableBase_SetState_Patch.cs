@@ -3,6 +3,7 @@ using System.Reflection;
 using Harmony;
 using NitroxClient.GameLogic;
 using NitroxModel.Core;
+using NitroxModel.Logger;
 
 namespace NitroxPatcher.Patches
 {
@@ -13,6 +14,7 @@ namespace NitroxPatcher.Patches
 
         public static bool Prefix(ConstructableBase __instance, ref bool value, ref bool setAmount)
         {
+            Log.Debug("ConstructableBase_SetState_Patch-Prefix");
             NitroxServiceLocator.LocateService<Building>().SetState(__instance.gameObject, typeof(ConstructableBase), value, setAmount);
 
             return true;
