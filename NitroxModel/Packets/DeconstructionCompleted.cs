@@ -8,7 +8,18 @@ namespace NitroxModel.Packets
     {
         public string Guid { get; }
         public string ParentGuid { get; }
-        public Type GameObjectType { get; }
+        public Type GameObjectType
+        {
+            get
+            {
+                return Type.GetType(_GameObjectType);
+            }
+            set
+            {
+                _GameObjectType = value.AssemblyQualifiedName;
+            }
+        }
+        private string _GameObjectType;
 
         public DeconstructionCompleted(string guid, string parentGuid, Type goType)
         {

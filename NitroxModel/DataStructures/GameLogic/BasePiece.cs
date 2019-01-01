@@ -54,8 +54,21 @@ namespace NitroxModel.DataStructures.GameLogic
             set { RotationMetadata = Optional<RotationMetadata>.OfNullable(value); }
         }
 
+        [ProtoIgnore]
+        public Type TypeOfConstructable
+        {
+            get
+            {
+                return Type.GetType(_TypeOfConstructable);
+            }
+            set
+            {
+                _TypeOfConstructable = value.AssemblyQualifiedName;
+            }
+        }
+
         [ProtoMember(12)]
-        public Type TypeOfConstructable { get; set; }
+        private string _TypeOfConstructable;
 
         [ProtoIgnore]
         public Optional<RotationMetadata> RotationMetadata {get; set; }
