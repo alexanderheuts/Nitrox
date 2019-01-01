@@ -6,26 +6,26 @@ using NitroxModel.Core;
 
 namespace NitroxPatcher.Patches
 {
-    public class Constructable_Deconstruct_Patch : NitroxPatch
+    public class ConstructableBase_Deconstruct_Patch : NitroxPatch
     {
-        public static readonly Type TARGET_CLASS = typeof(Constructable);
+        public static readonly Type TARGET_CLASS = typeof(ConstructableBase);
         public static readonly MethodInfo TARGET_METHOD = TARGET_CLASS.GetMethod("Deconstruct");
-        
-        public static bool Prefix(Constructable __instance)
+
+        public static bool Prefix(ConstructableBase __instance)
         {
             if (!__instance._constructed && __instance.constructedAmount > 0)
             {
-                NitroxServiceLocator.LocateService<Building>().ChangeConstructionAmount(__instance.gameObject, typeof(Constructable), __instance.constructedAmount);
+                NitroxServiceLocator.LocateService<Building>().ChangeConstructionAmount(__instance.gameObject, typeof(ConstructableBase), __instance.constructedAmount);
             }
 
             return true;
         }
 
-        public static void Postfix(Constructable __instance, bool __result)
+        public static void Postfix(ConstructableBase __instance, bool __result)
         {
             if (__result && __instance.constructedAmount <= 0f)
             {
-                NitroxServiceLocator.LocateService<Building>().DeconstructionComplete(__instance.gameObject, typeof(Constructable));
+                NitroxServiceLocator.LocateService<Building>().DeconstructionComplete(__instance.gameObject, typeof(ConstructableBase));
             }
         }
 

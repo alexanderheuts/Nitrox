@@ -11,7 +11,7 @@ namespace NitroxServer.GameLogic.Bases
     public class BaseData
     {
         [ProtoIgnore]
-        private object changeLock = new object();
+        private readonly object changeLock = new object();
 
         [ProtoMember(1)]
         public Dictionary<string, BasePiece> SerializableBasePiecesByGuid
@@ -53,7 +53,7 @@ namespace NitroxServer.GameLogic.Bases
             }
         }
 
-        public void BasePieceConstructionAmountChanged(string guid, string parentGuid, float constructionAmount, bool constructing)
+        public void BasePieceConstructionAmountChanged(string guid, string parentGuid, Type goType, float constructionAmount)
         {
             BasePiece basePiece;
 
@@ -115,6 +115,10 @@ namespace NitroxServer.GameLogic.Bases
                     if(basePiece.ConstructionCompleted)
                     {
                         completedBasePieceHistory.Add(parentGuid, basePiece);
+                    }
+                    else
+                    {
+                        basePiecesByGuid.Remove(parentGuid);
                     }
                 }
             }

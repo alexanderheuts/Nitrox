@@ -167,16 +167,24 @@ namespace NitroxClient.MonoBehaviours
 
         private void ConstructionAmountChanged(ConstructionAmountChangedEvent amountChanged)
         {
-            Log.Debug("Processing ConstructionAmountChanged Guid={0} ParentGUID={1} AmountChanged={2}", amountChanged.Guid, amountChanged.ParentGuid, amountChanged.Amount);
-
             GameObject constructing = GuidHelper.RequireObjectFrom(amountChanged.ParentGuid);
-            Constructable constructable = constructing.GetComponentInChildren<Constructable>();
-            constructable.constructedAmount = amountChanged.Amount;
 
             using (packetSender.Suppress<ConstructionAmountChanged>())
             {
-                constructable.Construct();
+                if (amountChanged.GameObjectType == typeof(Constructable))
+                {
+                    Constructable constructable = constructing.GetComponentInChildren<Constructable>();
+                    constructable.constructedAmount = amountChanged.Amount;
+                    constructable.Construct();
+                }
+                else if (amountChanged.GameObjectType == typeof(ConstructableBase))
+                {
+                    ConstructableBase constructable = constructing.GetComponentInChildren<ConstructableBase>();
+                    constructable.constructedAmount = amountChanged.Amount;
+                    constructable.Construct();
+                }
             }
+            
         }
 
         private void DeconstructionBegin(DeconstructionBeginEvent begin)
@@ -217,19 +225,18 @@ namespace NitroxClient.MonoBehaviours
 
         private void DeconstructionCompleted(DeconstructionCompletedEvent completed)
         {
-            Log.Debug("Processing DeconstructionCompleted Guid={0} ParentGUID={1}", completed.Guid, completed.ParentGuid);
-            // We destroy the parent of the constructable, not just the constructable
             GameObject deconstructing = GuidHelper.RequireObjectFrom(completed.ParentGuid);
-            Log.Debug("Parent to be deconstructed is of type {0}", deconstructing.GetType().ToString());
-            Constructable constructable = deconstructing.GetComponentInChildren<Constructable>();
-
-            // In case we missed the DeconstructionBegin, make sure the game knows it's being deconstructed
-            constructable.SetState(false, false);
-
-            constructable.constructedAmount = 0f;
-            constructable.Deconstruct();
-
-            //UnityEngine.Object.Destroy(deconstructing);
+            
+            if(completed.GameObjectType == typeof(Constructable))
+            {
+                Constructable constructable = deconstructing.GetComponentInChildren<Constructable>();
+                constructable.Deconstruct();
+            }
+            else if(completed.GameObjectType == typeof(ConstructableBase))
+            {
+                ConstructableBase constructableBase = deconstructing.GetComponentInChildren<ConstructableBase>();
+                constructableBase.Deconstruct();
+            }
         }
 
         private void SetState(SetStateEvent setState)

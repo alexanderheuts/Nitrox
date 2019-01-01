@@ -8,11 +8,13 @@ namespace NitroxModel.Packets
     {
         public string Guid { get; }
         public string ParentGuid { get; }
+        public Type GameObjectType { get; }
 
-        public DeconstructionCompleted(string guid, string parentGuid)
+        public DeconstructionCompleted(string guid, string parentGuid, Type goType)
         {
             Guid = guid;
             ParentGuid = parentGuid;
+            GameObjectType = goType;
         }
 
         public override string ToString()

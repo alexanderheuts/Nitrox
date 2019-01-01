@@ -76,7 +76,7 @@ namespace NitroxClient.GameLogic
             packetSender.Send(placedBasePiece);
         }
 
-        public void ChangeConstructionAmount(GameObject gameObject, float amount, bool constructing)
+        public void ChangeConstructionAmount(GameObject gameObject, Type goType, float amount)
         {
             timeSinceLastConstructionChangeEvent += Time.deltaTime;
 
@@ -92,7 +92,7 @@ namespace NitroxClient.GameLogic
 
             if (0.05f < amount && amount < 0.95f) // Deconstruction / Construction complete event handled by function below
             {
-                ConstructionAmountChanged amountChanged = new ConstructionAmountChanged(guid, parentGuid, amount, constructing);
+                ConstructionAmountChanged amountChanged = new ConstructionAmountChanged(guid, parentGuid, goType, amount);
                 packetSender.Send(amountChanged);
             }
         }
@@ -107,12 +107,12 @@ namespace NitroxClient.GameLogic
             packetSender.Send(deconstructionBegin);
         }
 
-        public void DeconstructionComplete(GameObject gameObject)
+        public void DeconstructionComplete(GameObject gameObject, Type goType)
         {
             string guid = GuidHelper.GetGuid(gameObject);
             string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
 
-            DeconstructionCompleted deconstructionCompleted = new DeconstructionCompleted(guid, parentGuid);
+            DeconstructionCompleted deconstructionCompleted = new DeconstructionCompleted(guid, parentGuid, goType);
             packetSender.Send(deconstructionCompleted);
         }
 

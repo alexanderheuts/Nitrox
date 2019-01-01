@@ -15,7 +15,7 @@ namespace NitroxClient.Communication.Packets.Processors
 
         public override void Process(DeconstructionCompleted packet)
         {
-            buildEventQueue.EnqueueDeconstructionCompleted(packet.Guid, packet.ParentGuid);
+            buildEventQueue.EnqueueDeconstructionCompleted(packet.Guid, packet.ParentGuid, packet.GameObjectType);
         }
     }
 }
