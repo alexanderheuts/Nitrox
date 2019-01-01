@@ -182,7 +182,7 @@ namespace NitroxClient.Communication.Packets.Processors
 
                         if (!bp.ConstructionCompleted)
                         {
-                            buildEventQueue.EnqueueAmountChanged(bp.Guid, bp.ParentGuid, bp.ConstructionAmount);
+                            buildEventQueue.EnqueueAmountChanged(bp.Guid, bp.ParentGuid, bp.TypeOfConstructable, bp.ConstructionAmount);
                         }
                     }
                 }

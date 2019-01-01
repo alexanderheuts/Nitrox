@@ -99,12 +99,12 @@
     <Compile Include="Communication\Packets\Processors\CellVisibilityChangedProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\DeconstructionCompletedPacketProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\DeconstructionBeginPacketProcessor.cs" />
-    <Compile Include="Communication\Packets\Processors\ConstructionCompletedPacketProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\ConstructionAmountChangedPacketProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\EquipmentAddItemPacketProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\EquipmentRemoveItemPacketProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\ItemContainerRemovePacketProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\ItemContainerAddPacketProcessor.cs" />
+    <Compile Include="Communication\Packets\Processors\SetStatePacketProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\SubRootChangedPacketProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\ServerCommandProcessor.cs" />
     <Compile Include="Communication\Packets\Processors\KnownTechEntryAddProcessor.cs" />

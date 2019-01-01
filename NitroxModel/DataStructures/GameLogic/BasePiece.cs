@@ -54,6 +54,9 @@ namespace NitroxModel.DataStructures.GameLogic
             set { RotationMetadata = Optional<RotationMetadata>.OfNullable(value); }
         }
 
+        [ProtoMember(12)]
+        public Type TypeOfConstructable { get; set; }
+
         [ProtoIgnore]
         public Optional<RotationMetadata> RotationMetadata {get; set; }
 
@@ -62,9 +65,10 @@ namespace NitroxModel.DataStructures.GameLogic
             RotationMetadata = Optional<RotationMetadata>.Empty();
         }
 
-        public BasePiece(string guid, Vector3 itemPosition, Quaternion rotation, Vector3 cameraPosition, Quaternion cameraRotation, TechType techType, string parentGuid, string baseGuid, bool isFurniture, Optional<RotationMetadata> rotationMetadata)
+        public BasePiece(string guid, Type typeOfConstructable, Vector3 itemPosition, Quaternion rotation, Vector3 cameraPosition, Quaternion cameraRotation, TechType techType, string parentGuid, string baseGuid, bool isFurniture, Optional<RotationMetadata> rotationMetadata)
         {
             Guid = guid;
+            TypeOfConstructable = typeOfConstructable;
             ItemPosition = itemPosition;
             Rotation = rotation;
             TechType = techType;

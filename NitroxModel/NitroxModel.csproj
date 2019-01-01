@@ -79,6 +79,7 @@
     <Compile Include="Discovery\IFindGameInstallation.cs" />
     <Compile Include="Discovery\InstallationFinders\SteamGameRegistryFinder.cs" />
     <Compile Include="Discovery\InstallationFinders\ConfigFileGameFinder.cs" />
+    <Compile Include="Packets\SetState.cs" />
     <Compile Include="Packets\SubRootChanged.cs" />
     <Compile Include="Packets\VehicleChildUpdate.cs" />
     <Compile Include="DataStructures\GameLogic\VehicleModel.cs" />
@@ -111,7 +112,6 @@
     <Compile Include="Packets\CellVisibilityChanged.cs" />
     <Compile Include="Packets\ChatMessage.cs" />
     <Compile Include="Packets\ConstructionAmountChanged.cs" />
-    <Compile Include="Packets\ConstructionCompleted.cs" />
     <Compile Include="Packets\ConstructorBeginCrafting.cs" />
     <Compile Include="Packets\CorrelatedPacket.cs" />
     <Compile Include="Packets\CreatureActionChanged.cs" />

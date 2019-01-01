@@ -3,11 +3,9 @@ using NitroxClient.GameLogic.Helper;
 using NitroxModel.DataStructures.GameLogic;
 using NitroxModel.DataStructures.GameLogic.Buildings;
 using NitroxModel.DataStructures.Util;
-using NitroxModel.Logger;
 using NitroxModel.Packets;
 using UnityEngine;
 using System;
-using static NitroxClient.GameLogic.Helper.TransientLocalObjectManager;
 
 namespace NitroxClient.GameLogic
 {
@@ -46,7 +44,7 @@ namespace NitroxClient.GameLogic
             Transform camera = Camera.main.transform;
             Optional<RotationMetadata> rotationMetadata = RotationMetadata.From(baseGhost);
 
-            BasePiece basePiece = new BasePiece(guid, placedPosition, quaternion, camera.position, camera.rotation, techType, parentGuid, baseGuid, false, rotationMetadata);
+            BasePiece basePiece = new BasePiece(guid, typeof(ConstructableBase), placedPosition, quaternion, camera.position, camera.rotation, techType, parentGuid, baseGuid, false, rotationMetadata);
             PlaceBasePiece placedBasePiece = new PlaceBasePiece(basePiece);
             packetSender.Send(placedBasePiece);
         }
@@ -71,7 +69,7 @@ namespace NitroxClient.GameLogic
             Transform camera = Camera.main.transform;
             Optional<RotationMetadata> rotationMetadata = Optional<RotationMetadata>.Empty();
 
-            BasePiece basePiece = new BasePiece(guid, itemPosition, quaternion, camera.position, camera.rotation, techType, parentGuid, subGuid, true, rotationMetadata);
+            BasePiece basePiece = new BasePiece(guid, typeof(Constructable), itemPosition, quaternion, camera.position, camera.rotation, techType, parentGuid, subGuid, true, rotationMetadata);
             PlaceBasePiece placedBasePiece = new PlaceBasePiece(basePiece);
             packetSender.Send(placedBasePiece);
         }
@@ -101,7 +99,6 @@ namespace NitroxClient.GameLogic
         {
             string guid = GuidHelper.GetGuid(gameObject);
             string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
-            Log.Debug("DeconstructionBegin triggered. GameObjectType={0} GUID={1} ParentGUID={2}", gameObject.GetType().ToString(), guid, parentGuid);
 
             DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid, parentGuid, goType);
             packetSender.Send(deconstructionBegin);

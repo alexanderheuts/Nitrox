@@ -11,14 +11,16 @@ namespace NitroxPatcher.Patches
         public static readonly Type TARGET_CLASS = typeof(Constructable);
         public static readonly MethodInfo TARGET_METHOD = TARGET_CLASS.GetMethod("SetState");
 
-        // TODO!
-        // We need to make sure to identify a Constructable being set to Deconstruct, i.e. SetState(false, false)
-        // Probably a Prefix check
+        public static bool Prefix(ConstructableBase __instance, ref bool value, ref bool setAmount)
+        {
+            NitroxServiceLocator.LocateService<Building>().SetState(__instance.gameObject, typeof(Constructable), value, setAmount);
 
+            return true;
+        }
 
         public override void Patch(HarmonyInstance harmony)
         {
-            PatchMultiple(harmony, TARGET_METHOD, true, true, false);
+            PatchPrefix(harmony, TARGET_METHOD);
         }
     }
 }
