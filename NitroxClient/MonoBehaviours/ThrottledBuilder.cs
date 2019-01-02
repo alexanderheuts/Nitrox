@@ -259,16 +259,13 @@ namespace NitroxClient.MonoBehaviours
                     ConstructableBase cb = goSetStateParent.GetComponentInChildren<ConstructableBase>();
                     if (!setState.Value == cb._constructed && !setState.Value && setState.SetAmount)
                     {
-                        cb.ReflectionSet("modelCopy", null);
+                        cb.Deconstruct();
+                        Destroy(goSetStateParent);
+                        Log.Debug("Destroyed Base during SetState");
                     }
-
-                    if(cb.SetState(setState.Value, setState.SetAmount))
+                    else
                     {
-                        if(!setState.Value && setState.SetAmount)
-                        {
-                            Destroy(goSetStateParent);
-                            Log.Debug("Destroyed Base during SetState");
-                        }
+                        cb.SetState(setState.Value, setState.SetAmount);
                     }
                 }
             }

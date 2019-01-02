@@ -91,7 +91,7 @@ namespace NitroxModel.DataStructures.GameLogic
             BaseGuid = baseGuid;
             IsFurniture = isFurniture;
             ConstructionAmount = 0.0f;
-            ConstructionCompleted = false;
+            ConstructionCompleted = true;
             RotationMetadata = rotationMetadata;
         }
 
