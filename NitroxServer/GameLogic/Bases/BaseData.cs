@@ -92,6 +92,11 @@ namespace NitroxServer.GameLogic.Bases
                 {
                     basePiecesByGuid.Remove(parentGuid);
                 }
+                if(completedBasePieceHistory.TryGetValue(parentGuid, out basePiece))
+                {
+                    completedBasePieceHistory.Remove(parentGuid);
+                }
+                DebugOutput();
             }
         }
 
@@ -121,11 +126,6 @@ namespace NitroxServer.GameLogic.Bases
                     {
                         Log.Debug("Construction Complete");
                         completedBasePieceHistory.Add(parentGuid, basePiece);
-                    }
-                    else
-                    {
-                        Log.Debug("Deconstruction Complete");
-                        basePiecesByGuid.Remove(parentGuid);
                     }
                 }
             }

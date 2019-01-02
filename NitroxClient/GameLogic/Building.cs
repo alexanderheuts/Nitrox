@@ -37,6 +37,7 @@ namespace NitroxClient.GameLogic
             GuidHelper.SetNewGuid(constructableBase.transform.parent.gameObject, parentGuid);
 
             string baseGuid = GuidHelper.GetGuid(constructableBase.transform.root.gameObject);
+            Log.Debug("PlaceBasePiece Guid={0} ParentGuid={1} BaseGuid={2}", guid, parentGuid, baseGuid);
 
             // Possibly we don't need the targetbase?
             //string parentBaseGuid = (targetBase == null) ? null : GuidHelper.GetGuid(targetBase.gameObject);
@@ -122,9 +123,8 @@ namespace NitroxClient.GameLogic
 
         public void SetState(GameObject gameObject, Type goType, bool value, bool setAmount)
         {
-            Log.Debug("Building::SetState");
             string guid = GuidHelper.GetGuid(gameObject);
-            Log.Debug("Building::SetState GUID={0}", guid);
+           
             string parentGuid = "";
             try
             {
@@ -137,9 +137,6 @@ namespace NitroxClient.GameLogic
                 return;
             }
 
-            Log.Debug("Building::SetState GUID={0} ParentGUID={1}", guid, parentGuid);
-
-            Log.Debug("Client preparing to send setState for Guid={0} ParentGuid={1} goType={2} value={3} setAmount={4}", guid, parentGuid, goType, value, setAmount);
             SetState setState = new SetState(guid, parentGuid, goType, value, setAmount);
             packetSender.Send(setState);
             Log.Debug("Client sent setState for Guid={0} ParentGuid={1} goType={2} value={3} setAmount={4}", guid, parentGuid, goType, value, setAmount);

@@ -25,6 +25,7 @@ namespace NitroxPatcher.Patches
         {
             if (__result && __instance.constructedAmount <= 0f)
             {
+                NitroxServiceLocator.LocateService<Building>().SetState(__instance.gameObject, typeof(ConstructableBase), false, true);
                 NitroxServiceLocator.LocateService<Building>().DeconstructionComplete(__instance.gameObject, typeof(ConstructableBase));
             }
         }

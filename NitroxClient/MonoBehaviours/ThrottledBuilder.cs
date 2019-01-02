@@ -235,8 +235,12 @@ namespace NitroxClient.MonoBehaviours
             else if(completed.GameObjectType == typeof(ConstructableBase))
             {
                 ConstructableBase constructableBase = deconstructing.GetComponentInChildren<ConstructableBase>();
-                constructableBase.Deconstruct();
+                if (constructableBase.Deconstruct())
+                {
+                    Log.Debug("Deconstruction Success");
+                }
             }
+            Destroy(deconstructing);
         }
 
         private void SetState(SetStateEvent setState)
@@ -253,7 +257,19 @@ namespace NitroxClient.MonoBehaviours
                 else if (setState.GameObjectType == typeof(ConstructableBase))
                 {
                     ConstructableBase cb = goSetStateParent.GetComponentInChildren<ConstructableBase>();
-                    cb.SetState(setState.Value, setState.SetAmount);
+                    if (!setState.Value == cb._constructed && !setState.Value && setState.SetAmount)
+                    {
+                        cb.ReflectionSet("modelCopy", null);
+                    }
+
+                    if(cb.SetState(setState.Value, setState.SetAmount))
+                    {
+                        if(!setState.Value && setState.SetAmount)
+                        {
+                            Destroy(goSetStateParent);
+                            Log.Debug("Destroyed Base during SetState");
+                        }
+                    }
                 }
             }
         }
