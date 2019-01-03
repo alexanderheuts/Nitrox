@@ -18,7 +18,7 @@ namespace NitroxPatcher.Patches
         // NOTE: We may want to check whether other players are in this base. Not necessarily in here.
         public static void Prefix(BaseDeconstructable __instance)
         {
-            NitroxServiceLocator.LocateService<Building>().DeconstructionBegin(__instance.gameObject, typeof(BaseDeconstructable));
+            //NitroxServiceLocator.LocateService<Building>().DeconstructionBegin(__instance.gameObject, typeof(BaseDeconstructable));
         }
 
         public override void Patch(HarmonyInstance harmony)

@@ -76,7 +76,7 @@ namespace NitroxClient.Communication
                             }
                             catch(Exception e)
                             {
-                                Log.Debug("ReceivedMessage Failure:", e.ToString());
+                                Log.Debug("ReceivedMessage Failure:", e.Message.ToString());
                             }
                         }
                         break;
@@ -90,13 +90,20 @@ namespace NitroxClient.Communication
         
         public void Send(Packet packet)
         {
-            byte[] bytes = packet.Serialize();
+            try
+            {
+                byte[] bytes = packet.Serialize();
 
-            NetOutgoingMessage om = client.CreateMessage();
-            om.Write(bytes);
+                NetOutgoingMessage om = client.CreateMessage();
+                om.Write(bytes);
 
-            client.SendMessage(om, packet.DeliveryMethod, (int)packet.UdpChannel);
-            client.FlushSendQueue();
+                client.SendMessage(om, packet.DeliveryMethod, (int)packet.UdpChannel);
+                client.FlushSendQueue();
+            }
+            catch(Exception e)
+            {
+                Log.Debug("UdpClient::SendMessage Exception" + e.Message.ToString());
+            }
         }
 
         public void Stop()

@@ -140,7 +140,7 @@ namespace NitroxClient.MonoBehaviours
                 constructable = MultiplayerBuilder.TryPlaceBase(targetBase);
                 gameObject = constructable.gameObject;
 
-                GuidHelper.SetNewGuid(gameObject.GetComponentInParent<Base>().gameObject, basePiece.BaseGuid);
+                //GuidHelper.SetNewGuid(gameObject.GetComponentInParent<Base>().gameObject, basePiece.BaseGuid);
             }
             
             GuidHelper.SetNewGuid(gameObject, basePiece.Guid);
@@ -170,6 +170,10 @@ namespace NitroxClient.MonoBehaviours
                     ConstructableBase constructable = constructing.GetComponent<ConstructableBase>();
                     constructable.constructedAmount = amountChanged.Amount;
                     constructable.Construct();
+
+                    Log.Debug("ThrottledBuilder Change Base GUID");
+                    Base b = constructable.GetComponentInParent<Base>();
+                    GuidHelper.SetNewGuid(b.gameObject, amountChanged.BaseGuid);
                 }
             }
             
@@ -260,8 +264,9 @@ namespace NitroxClient.MonoBehaviours
                     ConstructableBase cb = goSetState.GetComponent<ConstructableBase>();
                     if (!setState.Value == cb._constructed && !setState.Value && setState.SetAmount)
                     {
-                        Base b = cb.GetComponentInParent<Base>();
-                        GuidHelper.SetNewGuid(b.gameObject, setState.BaseGuid);
+                        Log.Debug("ThrottledBuilder Change Base GUID");
+                       // Base b = cb.GetComponentInParent<Base>();
+                       // GuidHelper.SetNewGuid(b.gameObject, setState.BaseGuid);
                         //cb.Deconstruct();
                         //Destroy(goSetState);
                         //Log.Debug("Destroyed Base during SetState");

@@ -85,9 +85,16 @@ namespace NitroxServer.Communication
                         case NetIncomingMessageType.Data:
                             if (im.Data.Length > 0)
                             {
-                                Connection connection = GetConnection(im.SenderConnection.RemoteUniqueIdentifier);
-                                ProcessIncomingData(connection, im.Data);
-                            }
+                                try
+                                {
+                                    Connection connection = GetConnection(im.SenderConnection.RemoteUniqueIdentifier);
+                                    ProcessIncomingData(connection, im.Data);
+                                }
+                                catch (Exception e)
+                                {
+                                    Log.Debug("ReceivedMessage Failure:", e.Message.ToString());
+                                }
+                             }
                             break;
                         default:
                             Log.Info("Unhandled type: " + im.MessageType + " " + im.LengthBytes + " bytes " + im.DeliveryMethod + "|" + im.SequenceChannel);

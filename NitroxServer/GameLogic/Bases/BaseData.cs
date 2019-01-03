@@ -47,10 +47,12 @@ namespace NitroxServer.GameLogic.Bases
 
         public void AddBasePiece(BasePiece basePiece)
         {
+            Log.Debug("Adding basePiece.");
             lock(changeLock)
             {
                 basePiecesByGuid.Add(basePiece.Guid, basePiece);
             }
+            DebugOutput();
         }
 
         public void BasePieceConstructionAmountChanged(string guid, string baseGuid, Type goType, float constructionAmount)
@@ -63,6 +65,10 @@ namespace NitroxServer.GameLogic.Bases
                 if (basePiecesByGuid.TryGetValue(guid, out basePiece))
                 {
                     basePiece.ConstructionAmount = constructionAmount;
+
+                    Log.Debug("Updating BaseGuid");
+                    Log.Debug("Old GUID={0} New GUID={1}", basePiece.BaseGuid, baseGuid);
+                    basePiece.BaseGuid = baseGuid;
                 }
             }
         }
@@ -82,15 +88,22 @@ namespace NitroxServer.GameLogic.Bases
                 }
                 else
                 {
+                    bool remove = false;
+                    string key = "";
                     // If we can't find it, we need to do something smart to find the base piece
-                    foreach(KeyValuePair<string, BasePiece> kvp in completedBasePieceHistory)
+                    foreach (KeyValuePair<string, BasePiece> kvp in completedBasePieceHistory)
                     {
-                        if(kvp.Value.BaseGuid == baseGuid && kvp.Value.TypeOfConstructable == typeof(ConstructableBase))
+                        if (kvp.Value.BaseGuid == baseGuid && kvp.Value.TypeOfConstructable == typeof(ConstructableBase))
                         {
                             Log.Debug("Found basePiece with GUID={0}. Removing it.", kvp.Key);
-                            basePiecesByGuid.Remove(kvp.Key);
-                            completedBasePieceHistory.Remove(kvp.Key);
+                            key = kvp.Key;
+                            remove = true;
                         }
+                    }
+                    if (remove)
+                    {
+                        basePiecesByGuid.Remove(key);
+                        completedBasePieceHistory.Remove(key);
                     }
                 }
             }
@@ -158,8 +171,10 @@ namespace NitroxServer.GameLogic.Bases
                         basePiece.ConstructionAmount = (!basePiece.ConstructionCompleted) ? 0f : 1f;
                     }
 
-                    if(!basePiece.ConstructionCompleted && basePiece.ConstructionAmount == 0f)
+                    if(!basePiece.ConstructionCompleted && setAmount)
                     {
+                        Log.Debug("Updating BaseGuid");
+                        Log.Debug("Old GUID={0} New GUID={1}", basePiece.BaseGuid, baseGuid);
                         basePiece.BaseGuid = baseGuid;
                     }
                     
@@ -205,16 +220,16 @@ namespace NitroxServer.GameLogic.Bases
             Log.Debug("BaseData Debugger");
             Log.Debug("BaseData history count={0} total piece count={1}", completedBasePieceHistory.Count, basePiecesByGuid.Count);
 
-            Log.Debug("BaseData History");
+            Log.Debug("=== BaseData History");
             foreach(KeyValuePair<string, BasePiece> kvp in completedBasePieceHistory)
             {
-                Log.Debug("BasePiece with GUID={0} BaseGUID={1} Type={2}", kvp.Key, kvp.Value.Guid, kvp.Value.BaseGuid, kvp.Value.TechType);
+                Log.Debug("BasePiece with GUID={0} BaseGUID={1} Type={2}", kvp.Value.Guid, kvp.Value.BaseGuid, kvp.Value.TechType);
             }
 
-            Log.Debug("BaseData All Pieces");
+            Log.Debug("=== BaseData All Pieces");
             foreach (KeyValuePair<string, BasePiece> kvp in basePiecesByGuid)
             {
-                Log.Debug("BasePiece with GUID={0} BaseGUID={1} Type={2}", kvp.Key, kvp.Value.Guid, kvp.Value.BaseGuid, kvp.Value.TechType);
+                Log.Debug("BasePiece with GUID={0} BaseGUID={1} Type={2}", kvp.Value.Guid, kvp.Value.BaseGuid, kvp.Value.TechType);
             }
             Log.Debug("=================");
         }

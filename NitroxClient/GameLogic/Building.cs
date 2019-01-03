@@ -30,7 +30,7 @@ namespace NitroxClient.GameLogic
             }
 
             string guid = GuidHelper.GetGuid(constructableBase.gameObject);
-            string baseGuid = ""; // Base Component doesn't exist until the object is instantiated, which is done AFTER this piece of code has run, by the ConstructableBase.SetState(false, true)
+            string baseGuid = Guid.NewGuid().ToString("D"); // Base Component doesn't exist until the object is instantiated, which is done AFTER this piece of code has run, by the ConstructableBase.SetState(false, true)
 
             // If the targetBase doesn't exist, we're creating a new base.
             string targetBaseGuid = (targetBase == null) ? null : GuidHelper.GetGuid(targetBase.gameObject);
@@ -82,7 +82,7 @@ namespace NitroxClient.GameLogic
             string guid = GuidHelper.GetGuid(gameObject);
             string baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
 
-            if (0.05f < amount && amount < 0.95f) // Deconstruction / Construction complete event handled by function below
+            if (amount < 0.95f) // Deconstruction / Construction complete event handled by function below
             {
                 ConstructionAmountChanged amountChanged = new ConstructionAmountChanged(guid, baseGuid, goType, amount);
                 packetSender.Send(amountChanged);
@@ -115,6 +115,7 @@ namespace NitroxClient.GameLogic
 
         public void SetState(GameObject gameObject, Type goType, bool value, bool setAmount)
         {
+            Log.Debug("Sending setState");
             string guid = GuidHelper.GetGuid(gameObject);
            
             string baseGuid = "";
@@ -126,7 +127,7 @@ namespace NitroxClient.GameLogic
             {
                 // Apparently a state is set on an orphaned object. We don't care for this in multiplayer.
                 // Deconstruction is a nasty piece of work. This is most likely the cause.
-                return;
+                //return;
             }
 
             SetState setState = new SetState(guid, baseGuid, goType, value, setAmount);

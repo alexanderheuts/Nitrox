@@ -12,23 +12,21 @@ namespace NitroxPatcher.Patches
         public static readonly Type TARGET_CLASS = typeof(Constructable);
         public static readonly MethodInfo TARGET_METHOD = TARGET_CLASS.GetMethod("SetState");
 
-        public static bool Prefix(Constructable __instance, ref bool value, ref bool setAmount)
+        public static void Postfix(Constructable __instance, ref bool value, ref bool setAmount)
         {
             if(__instance is ConstructableBase)
             {
                 // Check to see that we don't trigger SetState twice due to inheritance.
-                return true;
+                return;
             }
 
-            Log.Debug("Constructable_SetState_Patch-Prefix");
+            Log.Debug("Constructable_SetState_Patch-Postfix");
             NitroxServiceLocator.LocateService<Building>().SetState(__instance.gameObject, typeof(Constructable), value, setAmount);
-
-            return true;
         }
 
         public override void Patch(HarmonyInstance harmony)
         {
-            PatchPrefix(harmony, TARGET_METHOD);
+            PatchPostfix(harmony, TARGET_METHOD);
         }
     }
 }
