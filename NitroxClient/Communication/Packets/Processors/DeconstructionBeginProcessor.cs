@@ -15,7 +15,7 @@ namespace NitroxClient.Communication.Packets.Processors
 
         public override void Process(DeconstructionBegin packet)
         {
-            buildEventQueue.EnqueueDeconstructionBegin(packet.Guid, packet.ParentGuid, packet.GameObjectType);
+            buildEventQueue.EnqueueDeconstructionBegin(packet.Guid, packet.BaseGuid, packet.GameObjectType);
         }
     }
 }

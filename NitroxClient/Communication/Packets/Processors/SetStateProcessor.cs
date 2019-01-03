@@ -1,6 +1,5 @@
 ﻿using NitroxClient.Communication.Packets.Processors.Abstract;
 using NitroxClient.GameLogic.Bases;
-using NitroxModel.Logger;
 using NitroxModel.Packets;
 
 namespace NitroxClient.Communication.Packets.Processors
@@ -16,7 +15,7 @@ namespace NitroxClient.Communication.Packets.Processors
 
         public override void Process(SetState setStatePacket)
         {
-            buildEventQueue.EnqueueSetState(setStatePacket.Guid, setStatePacket.ParentGuid, setStatePacket.GameObjectType, setStatePacket.Value, setStatePacket.SetAmount);
+            buildEventQueue.EnqueueSetState(setStatePacket.Guid, setStatePacket.BaseGuid, setStatePacket.GameObjectType, setStatePacket.Value, setStatePacket.SetAmount);
         }
     }
 }

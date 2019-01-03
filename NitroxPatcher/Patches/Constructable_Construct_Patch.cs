@@ -17,7 +17,7 @@ namespace NitroxPatcher.Patches
         {
             Log.Debug("Constructable_ConstructPatch::Prefix");
             Log.Debug("Constructable GUID={0}", GuidHelper.GetGuid(__instance.gameObject));
-            Log.Debug("Constructable ParentGuid={0} Type={1}", GuidHelper.GetGuid(__instance.transform.parent.gameObject), __instance.transform.parent.gameObject.GetType());
+            Log.Debug("Constructable BaseGuid={0} Type={1}", GuidHelper.GetGuid(__instance.transform.parent.gameObject), __instance.transform.parent.gameObject.GetType());
 
             if(__instance is ConstructableBase)
             {

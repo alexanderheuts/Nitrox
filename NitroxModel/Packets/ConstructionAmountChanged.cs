@@ -6,7 +6,7 @@ namespace NitroxModel.Packets
     public class ConstructionAmountChanged : Packet
     {
         public string Guid { get; }
-        public string ParentGuid { get; }
+        public string BaseGuid { get; }
         public Type GameObjectType {
             get
             {
@@ -20,17 +20,17 @@ namespace NitroxModel.Packets
         public float ConstructionAmount { get; }
         private string _GameObjectType;
 
-        public ConstructionAmountChanged(string guid, string parentGuid, Type goType, float constructionAmount)
+        public ConstructionAmountChanged(string guid, string baseGuid, Type goType, float constructionAmount)
         {
             Guid = guid;
-            ParentGuid = parentGuid;
+            BaseGuid = baseGuid;
             GameObjectType = goType;
             ConstructionAmount = constructionAmount;
         }
 
         public override string ToString()
         {
-            return string.Format("[ConstructionAmountChanged Guid={0} ParentGUID={1} ConstructionAmount={2} GameObjecType={3}]", Guid, ParentGuid, ConstructionAmount, GameObjectType);
+            return string.Format("[ConstructionAmountChanged Guid={0} BaseGUID={1} ConstructionAmount={2} GameObjecType={3}]", Guid, BaseGuid, ConstructionAmount, GameObjectType);
         }
     }
 }

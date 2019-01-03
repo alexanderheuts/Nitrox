@@ -49,64 +49,100 @@ namespace NitroxServer.GameLogic.Bases
         {
             lock(changeLock)
             {
-                basePiecesByGuid.Add(basePiece.ParentGuid, basePiece);
+                basePiecesByGuid.Add(basePiece.Guid, basePiece);
             }
         }
 
-        public void BasePieceConstructionAmountChanged(string guid, string parentGuid, Type goType, float constructionAmount)
+        public void BasePieceConstructionAmountChanged(string guid, string baseGuid, Type goType, float constructionAmount)
         {
-            Log.Debug("Trying to change ConstructionAmount for Guid={0} ParentGuid={1} Type={2} Amount={3}", guid, parentGuid, goType, constructionAmount);
+            Log.Debug("Trying to change ConstructionAmount for Guid={0} BaseGuid={1} Type={2} Amount={3}", guid, baseGuid, goType, constructionAmount);
             BasePiece basePiece;
 
             lock (changeLock)
             {
-                if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
+                if (basePiecesByGuid.TryGetValue(guid, out basePiece))
                 {
                     basePiece.ConstructionAmount = constructionAmount;
                 }
             }
         }
 
-        public void BasePieceDeconstructionBegin(string guid, string parentGuid)
+        public void BasePieceDeconstructionBegin(string guid, string baseGuid)
         {
             BasePiece basePiece;
-
+            // Due to the way Deconstruction works for Bases we're going to remove a Base item immediately.
             lock (changeLock)
             {
-                if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
+                if (basePiecesByGuid.TryGetValue(guid, out basePiece))
                 {
+                    // If we can find it, it's a piece of Furniture being removed.
                     basePiece.ConstructionAmount = 0.95f;
 
-                    completedBasePieceHistory.Remove(parentGuid);
+                    completedBasePieceHistory.Remove(guid);
+                }
+                else
+                {
+                    // If we can't find it, we need to do something smart to find the base piece
+                    foreach(KeyValuePair<string, BasePiece> kvp in completedBasePieceHistory)
+                    {
+                        if(kvp.Value.BaseGuid == baseGuid && kvp.Value.TypeOfConstructable == typeof(ConstructableBase))
+                        {
+                            Log.Debug("Found basePiece with GUID={0}. Removing it.", kvp.Key);
+                            basePiecesByGuid.Remove(kvp.Key);
+                            completedBasePieceHistory.Remove(kvp.Key);
+                        }
+                    }
                 }
             }
         }
 
-        public void BasePieceDeconstructionCompleted(string guid, string parentGuid)
+        public void BasePieceDeconstructionCompleted(string guid, string baseGuid)
         {
-            Log.Debug("DeconstructionCompleted for Guid={0} ParentGuid={1}", guid, parentGuid);
+            Log.Debug("DeconstructionCompleted for Guid={0} BaseGuid={1}", guid, baseGuid);
             BasePiece basePiece;
             lock (changeLock)
             {
-                if (basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
+                DebugOutput();
+                if (basePiecesByGuid.TryGetValue(guid, out basePiece))
                 {
-                    basePiecesByGuid.Remove(parentGuid);
+                    basePiecesByGuid.Remove(guid);
                 }
-                if(completedBasePieceHistory.TryGetValue(parentGuid, out basePiece))
+                else if(completedBasePieceHistory.TryGetValue(guid, out basePiece))
                 {
-                    completedBasePieceHistory.Remove(parentGuid);
+                    completedBasePieceHistory.Remove(guid);
+                }
+                else
+                {
+                    bool remove = false;
+                    string key = "";
+                    // If we can't find it, we need to do something smart to find the base piece
+                    foreach (KeyValuePair<string, BasePiece> kvp in completedBasePieceHistory)
+                    {
+                        if (kvp.Value.BaseGuid == baseGuid && kvp.Value.TypeOfConstructable == typeof(ConstructableBase))
+                        {
+                            Log.Debug("Found basePiece with GUID={0}. Removing it.", kvp.Key);
+                            key = kvp.Key;
+                            remove = true;
+                        }
+                    }
+                    if(remove)
+                    {
+                        basePiecesByGuid.Remove(key);
+                        completedBasePieceHistory.Remove(key);
+                    }
                 }
                 DebugOutput();
             }
         }
 
-        public void BasePieceSetState(string guid, string parentGuid, Type goType, bool value, bool setAmount)
+        public void BasePieceSetState(string guid, string baseGuid, Type goType, bool value, bool setAmount)
         {
-            Log.Debug("Trying to setState for Guid={0} ParentGuid={1} Type={2} Value={3} SetAmount={4}", guid, parentGuid, goType, value, setAmount);
+            Log.Debug("Trying to setState for Guid={0} BaseGuid={1} Type={2} Value={3} SetAmount={4}", guid, baseGuid, goType, value, setAmount);
             BasePiece basePiece;
             lock (changeLock)
             {
-                if(basePiecesByGuid.TryGetValue(parentGuid, out basePiece))
+                DebugOutput();
+                if (basePiecesByGuid.TryGetValue(guid, out basePiece))
                 {
                     if(basePiece.ConstructionCompleted == value)
                     {
@@ -122,12 +158,18 @@ namespace NitroxServer.GameLogic.Bases
                         basePiece.ConstructionAmount = (!basePiece.ConstructionCompleted) ? 0f : 1f;
                     }
 
+                    if(!basePiece.ConstructionCompleted && basePiece.ConstructionAmount == 0f)
+                    {
+                        basePiece.BaseGuid = baseGuid;
+                    }
+                    
                     if(basePiece.ConstructionCompleted)
                     {
                         Log.Debug("Construction Complete");
-                        completedBasePieceHistory.Add(parentGuid, basePiece);
+                        completedBasePieceHistory.Add(guid, basePiece);
                     }
                 }
+                DebugOutput();
             }
         }
 
@@ -159,20 +201,22 @@ namespace NitroxServer.GameLogic.Bases
 
         private void DebugOutput()
         {
+            Log.Debug("=================");
             Log.Debug("BaseData Debugger");
             Log.Debug("BaseData history count={0} total piece count={1}", completedBasePieceHistory.Count, basePiecesByGuid.Count);
 
             Log.Debug("BaseData History");
             foreach(KeyValuePair<string, BasePiece> kvp in completedBasePieceHistory)
             {
-                Log.Debug("BasePiece with KEY={0} GUID={1} ParentGUID={2} BaseGUID={3} Type={4}", kvp.Key, kvp.Value.Guid, kvp.Value.ParentGuid, kvp.Value.BaseGuid, kvp.Value.TechType);
+                Log.Debug("BasePiece with GUID={0} BaseGUID={1} Type={2}", kvp.Key, kvp.Value.Guid, kvp.Value.BaseGuid, kvp.Value.TechType);
             }
 
             Log.Debug("BaseData All Pieces");
             foreach (KeyValuePair<string, BasePiece> kvp in basePiecesByGuid)
             {
-                Log.Debug("BasePiece with KEY={0} GUID={1} ParentGUID={2} BaseGUID={3} Type={4}", kvp.Key, kvp.Value.Guid, kvp.Value.ParentGuid, kvp.Value.BaseGuid, kvp.Value.TechType);
+                Log.Debug("BasePiece with GUID={0} BaseGUID={1} Type={2}", kvp.Key, kvp.Value.Guid, kvp.Value.BaseGuid, kvp.Value.TechType);
             }
+            Log.Debug("=================");
         }
     }
 }

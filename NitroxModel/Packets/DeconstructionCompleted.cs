@@ -7,7 +7,7 @@ namespace NitroxModel.Packets
     public class DeconstructionCompleted : Packet
     {
         public string Guid { get; }
-        public string ParentGuid { get; }
+        public string BaseGuid { get; }
         public Type GameObjectType
         {
             get
@@ -21,16 +21,16 @@ namespace NitroxModel.Packets
         }
         private string _GameObjectType;
 
-        public DeconstructionCompleted(string guid, string parentGuid, Type goType)
+        public DeconstructionCompleted(string guid, string baseGuid, Type goType)
         {
             Guid = guid;
-            ParentGuid = parentGuid;
+            BaseGuid = baseGuid;
             GameObjectType = goType;
         }
 
         public override string ToString()
         {
-            return string.Format("[DeconstructionCompleted Guid={0} ParentGUID={1}]", Guid, ParentGuid);
+            return string.Format("[DeconstructionCompleted Guid={0} BaseGUID={1}]", Guid, BaseGuid);
         }
     }
 }

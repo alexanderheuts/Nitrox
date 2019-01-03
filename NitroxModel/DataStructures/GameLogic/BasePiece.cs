@@ -23,31 +23,25 @@ namespace NitroxModel.DataStructures.GameLogic
         public TechType TechType { get; set; }
 
         [ProtoMember(5)]
-        // Guid of the parent GameObject
-        // NOTE: we need the parent for most interactions AFTER construction has been completed 
-        //       due to the way Unity works with component nesting.
-        public string ParentGuid { get; set; }
-
-        [ProtoMember(6)]
         public Vector3 CameraPosition { get; set; }
 
-        [ProtoMember(7)]
+        [ProtoMember(6)]
         public Quaternion CameraRotation { get; set; }
 
-        [ProtoMember(8)]
+        [ProtoMember(7)]
         public float ConstructionAmount { get; set; }
 
-        [ProtoMember(9)]
+        [ProtoMember(8)]
         public bool ConstructionCompleted { get; set; }
 
-        [ProtoMember(10)]
+        [ProtoMember(9)]
         public bool IsFurniture { get; set; }
 
-        [ProtoMember(11)]
+        [ProtoMember(10)]
         // Guid of the base GameObject
         public string BaseGuid { get; set; }
 
-        [ProtoMember(12, DynamicType = true)]
+        [ProtoMember(11, DynamicType = true)]
         public RotationMetadata SerializableRotationMetadata
         {
             get { return (RotationMetadata.IsPresent()) ? RotationMetadata.Get() : null; }
@@ -71,14 +65,18 @@ namespace NitroxModel.DataStructures.GameLogic
         private string _TypeOfConstructable;
 
         [ProtoIgnore]
+        public Optional<string> TargetBase { get; set; }
+
+        [ProtoIgnore]
         public Optional<RotationMetadata> RotationMetadata {get; set; }
 
         public BasePiece()
         {
+            TargetBase = Optional<string>.Empty();
             RotationMetadata = Optional<RotationMetadata>.Empty();
         }
 
-        public BasePiece(string guid, Type typeOfConstructable, Vector3 itemPosition, Quaternion rotation, Vector3 cameraPosition, Quaternion cameraRotation, TechType techType, string parentGuid, string baseGuid, bool isFurniture, Optional<RotationMetadata> rotationMetadata)
+        public BasePiece(string guid, Type typeOfConstructable, Vector3 itemPosition, Quaternion rotation, Vector3 cameraPosition, Quaternion cameraRotation, TechType techType, string baseGuid, Optional<string> targetBase, bool isFurniture, Optional<RotationMetadata> rotationMetadata)
         {
             Guid = guid;
             TypeOfConstructable = typeOfConstructable;
@@ -87,17 +85,17 @@ namespace NitroxModel.DataStructures.GameLogic
             TechType = techType;
             CameraPosition = cameraPosition;
             CameraRotation = cameraRotation;
-            ParentGuid = parentGuid;
             BaseGuid = baseGuid;
+            TargetBase = targetBase;
             IsFurniture = isFurniture;
-            ConstructionAmount = 0.0f;
+            ConstructionAmount = 1.0f;
             ConstructionCompleted = true;
             RotationMetadata = rotationMetadata;
         }
 
         public override string ToString()
         {
-            return "[BasePiece - ItemPosition: " + ItemPosition + " Guid: " + Guid + " Rotation: " + Rotation + " CameraPosition: " + CameraPosition + "CameraRotation: " + CameraRotation + " TechType: " + TechType + " ParentGuid: " + ParentGuid + " BaseGuid: " + BaseGuid + " ConstructionAmount: " + ConstructionAmount + " IsFurniture: " + IsFurniture  + " RotationMetadata: " + RotationMetadata + "]";
+            return "[BasePiece - ItemPosition: " + ItemPosition + " Guid: " + Guid + " Rotation: " + Rotation + " CameraPosition: " + CameraPosition + "CameraRotation: " + CameraRotation + " TechType: " + TechType + " BaseGuid: " + BaseGuid + " ConstructionAmount: " + ConstructionAmount + " IsFurniture: " + IsFurniture  + " RotationMetadata: " + RotationMetadata + "]";
         }
     }
 }

@@ -5,6 +5,7 @@ using NitroxClient.MonoBehaviours.Overrides;
 using NitroxClient.Unity.Helper;
 using NitroxModel.Core;
 using NitroxModel.DataStructures.GameLogic;
+using NitroxModel.DataStructures.Util;
 using NitroxModel.Helper;
 using NitroxModel.Logger;
 using NitroxModel.Packets;
@@ -118,41 +119,28 @@ namespace NitroxClient.MonoBehaviours
             MultiplayerBuilder.rotationMetadata = basePiece.RotationMetadata;
             MultiplayerBuilder.Begin(buildPrefab);
 
-            bool setBaseGuid = false;
-            GameObject goBase = null;
-
-            try
-            {
-                goBase = GuidHelper.RequireObjectFrom(basePiece.BaseGuid);
-            }
-            catch(Exception e)
-            {
-                // This should only happen during initial player sync with the placement of the first base piece.
-                setBaseGuid = true;
-            }
-
             Constructable constructable;
             GameObject gameObject;
+            GameObject targetBase = null;
+
+            if (basePiece.TargetBase.IsPresent())
+            {
+                targetBase = GuidHelper.RequireObjectFrom(basePiece.TargetBase.Get());
+            }
 
             if (basePiece.IsFurniture)
             {
-                SubRoot subRoot = (goBase != null) ? goBase.RequireComponent<SubRoot>() : null;
+                SubRoot subRoot = (targetBase != null) ? targetBase.RequireComponent<SubRoot>() : null;
                                 
                 gameObject = MultiplayerBuilder.TryPlaceFurniture(subRoot);
                 constructable = gameObject.RequireComponentInParent<Constructable>();
             }
             else
             {
-                constructable = MultiplayerBuilder.TryPlaceBase(goBase);
+                constructable = MultiplayerBuilder.TryPlaceBase(targetBase);
                 gameObject = constructable.gameObject;
 
-                // The parent object of the constructable is also newly created. We need to keep our GUID references correct.
-                GuidHelper.SetNewGuid(gameObject.transform.parent.gameObject, basePiece.ParentGuid);
-
-                if(setBaseGuid)
-                {
-                    GuidHelper.SetNewGuid(gameObject.transform.root.gameObject, basePiece.BaseGuid);
-                }
+                GuidHelper.SetNewGuid(gameObject.GetComponentInParent<Base>().gameObject, basePiece.BaseGuid);
             }
             
             GuidHelper.SetNewGuid(gameObject, basePiece.Guid);
@@ -167,19 +155,19 @@ namespace NitroxClient.MonoBehaviours
 
         private void ConstructionAmountChanged(ConstructionAmountChangedEvent amountChanged)
         {
-            GameObject constructing = GuidHelper.RequireObjectFrom(amountChanged.ParentGuid);
+            GameObject constructing = GuidHelper.RequireObjectFrom(amountChanged.Guid);
 
             using (packetSender.Suppress<ConstructionAmountChanged>())
             {
                 if (amountChanged.GameObjectType == typeof(Constructable))
                 {
-                    Constructable constructable = constructing.GetComponentInChildren<Constructable>();
+                    Constructable constructable = constructing.GetComponent<Constructable>();
                     constructable.constructedAmount = amountChanged.Amount;
                     constructable.Construct();
                 }
                 else if (amountChanged.GameObjectType == typeof(ConstructableBase))
                 {
-                    ConstructableBase constructable = constructing.GetComponentInChildren<ConstructableBase>();
+                    ConstructableBase constructable = constructing.GetComponent<ConstructableBase>();
                     constructable.constructedAmount = amountChanged.Amount;
                     constructable.Construct();
                 }
@@ -189,7 +177,7 @@ namespace NitroxClient.MonoBehaviours
 
         private void DeconstructionBegin(DeconstructionBeginEvent begin)
         {
-            GameObject deconstructing = GuidHelper.RequireObjectFrom(begin.ParentGuid);
+            GameObject deconstructing = null;
 
             using (packetSender.Suppress<DeconstructionBegin>())
             {
@@ -197,8 +185,10 @@ namespace NitroxClient.MonoBehaviours
                 {
                     if (begin.GameObjectType == typeof(Constructable))
                     {
+                        deconstructing = GuidHelper.RequireObjectFrom(begin.Guid);
+
                         // We're dealing with a Constructable. Which triggers deconstruction via SetState(false, false).
-                        Constructable constructable = deconstructing.GetComponentInChildren<Constructable>();
+                        Constructable constructable = deconstructing.GetComponent<Constructable>();
 
                         constructable.SetState(false, false);
                     }
@@ -206,6 +196,10 @@ namespace NitroxClient.MonoBehaviours
                     {
                         // We're dealing with either BaseDeconstructable or BaseExplicitFace. 
                         // Both resolve with the same method Deconstruct().
+
+                        // TODO: fix instantiating new object in deconstruct sequence.
+                        deconstructing = GuidHelper.RequireObjectFrom(begin.BaseGuid);
+
                         BaseDeconstructable baseDeconstructable = null;
                         if (begin.GameObjectType == typeof(BaseDeconstructable))
                         {
@@ -225,43 +219,52 @@ namespace NitroxClient.MonoBehaviours
 
         private void DeconstructionCompleted(DeconstructionCompletedEvent completed)
         {
-            GameObject deconstructing = GuidHelper.RequireObjectFrom(completed.ParentGuid);
-            
             if(completed.GameObjectType == typeof(Constructable))
             {
-                Constructable constructable = deconstructing.GetComponentInChildren<Constructable>();
+                GameObject deconstructing = GuidHelper.RequireObjectFrom(completed.Guid);
+
+                Constructable constructable = deconstructing.GetComponent<Constructable>();
                 constructable.Deconstruct();
+
+                Destroy(deconstructing);
             }
             else if(completed.GameObjectType == typeof(ConstructableBase))
             {
+                Log.Debug("DeconstructionCompleted guid={0} baseGuid={1}", completed.Guid, completed.BaseGuid);
+                // TODO: fix for changing GUID's in deconstruct due to copy instantiation
+                GameObject deconstructing = GuidHelper.RequireObjectFrom(completed.BaseGuid);
+
                 ConstructableBase constructableBase = deconstructing.GetComponentInChildren<ConstructableBase>();
-                if (constructableBase.Deconstruct())
+                if (constructableBase != null && constructableBase.Deconstruct())
                 {
                     Log.Debug("Deconstruction Success");
                 }
+                Destroy(deconstructing);
             }
-            Destroy(deconstructing);
         }
 
         private void SetState(SetStateEvent setState)
         {
-            GameObject goSetStateParent = GuidHelper.RequireObjectFrom(setState.ParentGuid);
+            GameObject goSetState = GuidHelper.RequireObjectFrom(setState.Guid);
 
             using (packetSender.Suppress<SetState>())
             {
                 if (setState.GameObjectType == typeof(Constructable))
                 {
-                    Constructable c = goSetStateParent.GetComponentInChildren<Constructable>();
+                    Constructable c = goSetState.GetComponent<Constructable>();
                     c.SetState(setState.Value, setState.SetAmount);
                 }
                 else if (setState.GameObjectType == typeof(ConstructableBase))
                 {
-                    ConstructableBase cb = goSetStateParent.GetComponentInChildren<ConstructableBase>();
+                    // TODO: fix deconstruction
+                    ConstructableBase cb = goSetState.GetComponent<ConstructableBase>();
                     if (!setState.Value == cb._constructed && !setState.Value && setState.SetAmount)
                     {
-                        cb.Deconstruct();
-                        Destroy(goSetStateParent);
-                        Log.Debug("Destroyed Base during SetState");
+                        Base b = cb.GetComponentInParent<Base>();
+                        GuidHelper.SetNewGuid(b.gameObject, setState.BaseGuid);
+                        //cb.Deconstruct();
+                        //Destroy(goSetState);
+                        //Log.Debug("Destroyed Base during SetState");
                     }
                     else
                     {

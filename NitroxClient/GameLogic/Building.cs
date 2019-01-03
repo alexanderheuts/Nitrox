@@ -30,23 +30,16 @@ namespace NitroxClient.GameLogic
             }
 
             string guid = GuidHelper.GetGuid(constructableBase.gameObject);
+            string baseGuid = ""; // Base Component doesn't exist until the object is instantiated, which is done AFTER this piece of code has run, by the ConstructableBase.SetState(false, true)
 
-            // All parents come out of the box with the same GUID. 
-            // We need to make sure they're unique because we rely on the GUID for retrieval.
-            string parentGuid = Guid.NewGuid().ToString("D"); 
-            GuidHelper.SetNewGuid(constructableBase.transform.parent.gameObject, parentGuid);
-
-            string baseGuid = GuidHelper.GetGuid(constructableBase.transform.root.gameObject);
-            Log.Debug("PlaceBasePiece Guid={0} ParentGuid={1} BaseGuid={2}", guid, parentGuid, baseGuid);
-
-            // Possibly we don't need the targetbase?
-            //string parentBaseGuid = (targetBase == null) ? null : GuidHelper.GetGuid(targetBase.gameObject);
+            // If the targetBase doesn't exist, we're creating a new base.
+            string targetBaseGuid = (targetBase == null) ? null : GuidHelper.GetGuid(targetBase.gameObject);
 
             Vector3 placedPosition = constructableBase.gameObject.transform.position;
             Transform camera = Camera.main.transform;
             Optional<RotationMetadata> rotationMetadata = RotationMetadata.From(baseGhost);
 
-            BasePiece basePiece = new BasePiece(guid, typeof(ConstructableBase), placedPosition, quaternion, camera.position, camera.rotation, techType, parentGuid, baseGuid, false, rotationMetadata);
+            BasePiece basePiece = new BasePiece(guid, typeof(ConstructableBase), placedPosition, quaternion, camera.position, camera.rotation, techType, baseGuid, Optional<string>.OfNullable(targetBaseGuid), false, rotationMetadata);
             PlaceBasePiece placedBasePiece = new PlaceBasePiece(basePiece);
             packetSender.Send(placedBasePiece);
         }
@@ -59,7 +52,6 @@ namespace NitroxClient.GameLogic
             }
 
             string guid = GuidHelper.GetGuid(gameObject);
-            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
 
             string subGuid = "";
             SubRoot sub = Player.main.currentSub;
@@ -71,7 +63,7 @@ namespace NitroxClient.GameLogic
             Transform camera = Camera.main.transform;
             Optional<RotationMetadata> rotationMetadata = Optional<RotationMetadata>.Empty();
 
-            BasePiece basePiece = new BasePiece(guid, typeof(Constructable), itemPosition, quaternion, camera.position, camera.rotation, techType, parentGuid, subGuid, true, rotationMetadata);
+            BasePiece basePiece = new BasePiece(guid, typeof(Constructable), itemPosition, quaternion, camera.position, camera.rotation, techType, subGuid, null, true, rotationMetadata);
             PlaceBasePiece placedBasePiece = new PlaceBasePiece(basePiece);
             packetSender.Send(placedBasePiece);
         }
@@ -88,11 +80,11 @@ namespace NitroxClient.GameLogic
             timeSinceLastConstructionChangeEvent = 0.0f;
             
             string guid = GuidHelper.GetGuid(gameObject);
-            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
+            string baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
 
             if (0.05f < amount && amount < 0.95f) // Deconstruction / Construction complete event handled by function below
             {
-                ConstructionAmountChanged amountChanged = new ConstructionAmountChanged(guid, parentGuid, goType, amount);
+                ConstructionAmountChanged amountChanged = new ConstructionAmountChanged(guid, baseGuid, goType, amount);
                 packetSender.Send(amountChanged);
             }
         }
@@ -106,18 +98,18 @@ namespace NitroxClient.GameLogic
                 Log.Debug("There's a Base component ");
             }
             string guid = GuidHelper.GetGuid(gameObject);
-            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
-            Log.Debug("Sending DeconstructionBegin Guid={0} ParentGuid={1} Type={2}", guid, parentGuid, goType);
-            DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid, parentGuid, goType);
+            string baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
+            Log.Debug("Sending DeconstructionBegin Guid={0} BaseGuid={1} Type={2}", guid, baseGuid, goType);
+            DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid, baseGuid, goType);
             packetSender.Send(deconstructionBegin);
         }
 
         public void DeconstructionComplete(GameObject gameObject, Type goType)
         {
             string guid = GuidHelper.GetGuid(gameObject);
-            string parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
+            string baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
 
-            DeconstructionCompleted deconstructionCompleted = new DeconstructionCompleted(guid, parentGuid, goType);
+            DeconstructionCompleted deconstructionCompleted = new DeconstructionCompleted(guid, baseGuid, goType);
             packetSender.Send(deconstructionCompleted);
         }
 
@@ -125,10 +117,10 @@ namespace NitroxClient.GameLogic
         {
             string guid = GuidHelper.GetGuid(gameObject);
            
-            string parentGuid = "";
+            string baseGuid = "";
             try
             {
-                 parentGuid = GuidHelper.GetGuid(gameObject.transform.parent.gameObject);
+                 baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
             }
             catch(Exception)
             {
@@ -137,9 +129,9 @@ namespace NitroxClient.GameLogic
                 return;
             }
 
-            SetState setState = new SetState(guid, parentGuid, goType, value, setAmount);
+            SetState setState = new SetState(guid, baseGuid, goType, value, setAmount);
             packetSender.Send(setState);
-            Log.Debug("Client sent setState for Guid={0} ParentGuid={1} goType={2} value={3} setAmount={4}", guid, parentGuid, goType, value, setAmount);
+            Log.Debug("Client sent setState for Guid={0} BaseGuid={1} goType={2} value={3} setAmount={4}", guid, baseGuid, goType, value, setAmount);
         }
     }
 }

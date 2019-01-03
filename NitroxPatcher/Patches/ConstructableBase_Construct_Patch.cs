@@ -2,7 +2,9 @@
 using System.Reflection;
 using Harmony;
 using NitroxClient.GameLogic;
+using NitroxClient.GameLogic.Helper;
 using NitroxModel.Core;
+using NitroxModel.Logger;
 
 namespace NitroxPatcher.Patches
 {

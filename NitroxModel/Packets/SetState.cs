@@ -6,7 +6,7 @@ namespace NitroxModel.Packets
     public class SetState : Packet
     {
         public string Guid { get; }
-        public string ParentGuid { get; }
+        public string BaseGuid { get; }
         public Type GameObjectType
         {
             get
@@ -22,10 +22,10 @@ namespace NitroxModel.Packets
         public bool SetAmount { get; }
         private string _GameObjectType;
 
-        public SetState(string guid, string parentGuid, Type goType, bool value, bool setAmount)
+        public SetState(string guid, string baseGuid, Type goType, bool value, bool setAmount)
         {
             Guid = guid;
-            ParentGuid = parentGuid;
+            BaseGuid = baseGuid;
             GameObjectType = goType;
             Value = value;
             SetAmount = setAmount;
