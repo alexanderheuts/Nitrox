@@ -2,6 +2,8 @@
 using System.Reflection;
 using Harmony;
 using NitroxClient.GameLogic;
+using NitroxClient.GameLogic.Helper;
+using NitroxModel.Logger;
 using NitroxModel.Core;
 
 namespace NitroxPatcher.Patches
@@ -13,6 +15,10 @@ namespace NitroxPatcher.Patches
 
         public static bool Prefix(Constructable __instance)
         {
+            Log.Debug("Constructable_ConstructPatch::Prefix");
+            Log.Debug("Constructable GUID={0}", GuidHelper.GetGuid(__instance.gameObject));
+            Log.Debug("Constructable ParentGuid={0} Type={1}", GuidHelper.GetGuid(__instance.transform.parent.gameObject), __instance.transform.parent.gameObject.GetType());
+
             if(__instance is ConstructableBase)
             {
                 // Check to make sure that we don't call ChangeConstructionAmount twice due to inheritance.
