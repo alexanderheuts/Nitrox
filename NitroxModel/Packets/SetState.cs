@@ -20,15 +20,17 @@ namespace NitroxModel.Packets
         }
         public bool Value { get; }
         public bool SetAmount { get; }
+        public string NewGuid { get; }
         private string _GameObjectType;
 
-        public SetState(string guid, string baseGuid, Type goType, bool value, bool setAmount)
+        public SetState(string guid, string baseGuid, Type goType, bool value, bool setAmount, string newGuid = "")
         {
             Guid = guid;
             BaseGuid = baseGuid;
             GameObjectType = goType;
             Value = value;
             SetAmount = setAmount;
+            NewGuid = newGuid;
         }
     }
 }

@@ -150,14 +150,16 @@ namespace NitroxClient.GameLogic.Bases
         public Type GameObjectType { get; }
         public bool Value { get; }
         public bool SetAmount { get; }
+        public string NewGuid { get; }
 
-        public SetStateEvent(string guid, string baseGuid, Type goType, bool value, bool setAmount)
+        public SetStateEvent(string guid, string baseGuid, Type goType, bool value, bool setAmount, string newGuid = "")
         {
             Guid = guid;
             BaseGuid = baseGuid;
             GameObjectType = goType;
             Value = value;
             SetAmount = setAmount;
+            NewGuid = newGuid;
         }
 
         public bool RequiresFreshFrame()

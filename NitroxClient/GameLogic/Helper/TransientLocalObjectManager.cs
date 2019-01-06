@@ -15,7 +15,8 @@ namespace NitroxClient.GameLogic.Helper
         public enum TransientObjectType
         {
             CONSTRUCTOR_INPUT_CRAFTED_GAMEOBJECT,
-            BASE_GHOST_NEWLY_CONSTRUCTED_BASE_GAMEOBJECT
+            BASE_GHOST_NEWLY_CONSTRUCTED_BASE_GAMEOBJECT,
+            BASE_NEWLY_SPAWNED_MODULE_GAMEOBJECT
         }
 
         public static Dictionary<TransientObjectType, object> localObjectsById = new Dictionary<TransientObjectType, object>();

@@ -148,9 +148,9 @@ namespace NitroxServer.GameLogic.Bases
             }
         }
 
-        public void BasePieceSetState(string guid, string baseGuid, Type goType, bool value, bool setAmount)
+        public void BasePieceSetState(string guid, string baseGuid, Type goType, bool value, bool setAmount, string newGuid = "")
         {
-            Log.Debug("Trying to setState for Guid={0} BaseGuid={1} Type={2} Value={3} SetAmount={4}", guid, baseGuid, goType, value, setAmount);
+            Log.Debug("Trying to setState for Guid={0} BaseGuid={1} Type={2} Value={3} SetAmount={4} NewGuid={5}", guid, baseGuid, goType, value, setAmount, newGuid);
             BasePiece basePiece;
             lock (changeLock)
             {
@@ -171,18 +171,19 @@ namespace NitroxServer.GameLogic.Bases
                         basePiece.ConstructionAmount = (!basePiece.ConstructionCompleted) ? 0f : 1f;
                     }
 
-                    if(!basePiece.ConstructionCompleted && setAmount)
+                    if(basePiece.ConstructionCompleted && setAmount)
                     {
+                        // We need to update the Base GUID, as completing construction creates a new Base
                         Log.Debug("Updating BaseGuid");
-                        Log.Debug("Old GUID={0} New GUID={1}", basePiece.BaseGuid, baseGuid);
-                        basePiece.BaseGuid = baseGuid;
-                    }
-                    
-                    if(basePiece.ConstructionCompleted)
-                    {
+                        Log.Debug("Old GUID={0} New GUID={1}", basePiece.BaseGuid, newGuid);
+                        basePiece.BaseGuid = newGuid;
+
                         Log.Debug("Construction Complete");
-                        completedBasePieceHistory.Add(guid, basePiece);
-                    }
+                        completedBasePieceHistory.Add(newGuid, basePiece);
+
+                        basePiecesByGuid.Remove(guid);
+                        basePiecesByGuid.Add(newGuid, basePiece);
+                    }                    
                 }
                 DebugOutput();
             }

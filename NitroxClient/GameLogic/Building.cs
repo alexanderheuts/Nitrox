@@ -30,7 +30,16 @@ namespace NitroxClient.GameLogic
             }
 
             string guid = GuidHelper.GetGuid(constructableBase.gameObject);
-            string baseGuid = Guid.NewGuid().ToString("D"); // Base Component doesn't exist until the object is instantiated, which is done AFTER this piece of code has run, by the ConstructableBase.SetState(false, true)
+            Log.Debug("Placing ConstructableBase gameObjectGuid={0} ", guid);
+            GameObject model = constructableBase.model;
+            Log.Debug("Placing ConstructableBase modelGuid={0}",GuidHelper.GetGuid(model));
+            GameObject ghost = baseGhost.gameObject;
+            Log.Debug("Placing ConstructableBase ghostGuid={0}", GuidHelper.GetGuid(ghost));
+
+            // For a new base piece the Base is hiding in a child of the parent gameobject of the ConstructableBase.
+            // Note: when deconstructing it is in a component in the parent of the ConstructableBase
+            Base b = constructableBase.transform.parent.gameObject.GetComponentInChildren<Base>();
+            string baseGuid = GuidHelper.GetGuid(b.gameObject);
 
             // If the targetBase doesn't exist, we're creating a new base.
             string targetBaseGuid = (targetBase == null) ? null : GuidHelper.GetGuid(targetBase.gameObject);
@@ -80,7 +89,7 @@ namespace NitroxClient.GameLogic
             timeSinceLastConstructionChangeEvent = 0.0f;
             
             string guid = GuidHelper.GetGuid(gameObject);
-            string baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
+            string baseGuid = GuidHelper.GetGuid(GetBase(gameObject).gameObject);
 
             if (amount < 0.95f) // Deconstruction / Construction complete event handled by function below
             {
@@ -91,48 +100,69 @@ namespace NitroxClient.GameLogic
 
         public void DeconstructionBegin(GameObject gameObject, Type goType)
         {
-            Log.Debug("DeconstructionBegin");
-            Base compInParent = gameObject.GetComponentInParent<Base>();
-            if (compInParent != null)
-            {
-                Log.Debug("There's a Base component ");
-            }
+            // Only called for base pieces. Furniture is deconstructed via SetState.
             string guid = GuidHelper.GetGuid(gameObject);
-            string baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
-            Log.Debug("Sending DeconstructionBegin Guid={0} BaseGuid={1} Type={2}", guid, baseGuid, goType);
+
+            Base b = GetBase(gameObject);
+            string baseGuid = GuidHelper.GetGuid(b.gameObject);
+
             DeconstructionBegin deconstructionBegin = new DeconstructionBegin(guid, baseGuid, goType);
             packetSender.Send(deconstructionBegin);
+            Log.Debug("Sent DeconstructionBegin Guid={0} BaseGuid={1} Type={2}", guid, baseGuid, goType);
         }
 
         public void DeconstructionComplete(GameObject gameObject, Type goType)
         {
             string guid = GuidHelper.GetGuid(gameObject);
-            string baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
+            string baseGuid = GuidHelper.GetGuid(GetBase(gameObject).gameObject);
 
             DeconstructionCompleted deconstructionCompleted = new DeconstructionCompleted(guid, baseGuid, goType);
             packetSender.Send(deconstructionCompleted);
         }
 
-        public void SetState(GameObject gameObject, Type goType, bool value, bool setAmount)
+        public void SetState(GameObject gameObject, Type goType, bool value, bool setAmount, string newGuid = "")
         {
-            Log.Debug("Sending setState");
+            // false, false -> deconstruct-start
+            // false, true -> construction-start (as ConstructableBase starts with _constructed = true 
+            // true, true -> construction-complete
             string guid = GuidHelper.GetGuid(gameObject);
-           
-            string baseGuid = "";
+
+            Base b = GetBase(gameObject);
+            if (b.gameObject == null)
+            {
+                // If there's no Base, what are we destroying? Must be client only for deconstruction routine. Other clients already lost interest.
+                return;
+            }
+            string baseGuid = GuidHelper.GetGuid(b.gameObject);
+
+            SetState setState = new SetState(guid, baseGuid, goType, value, setAmount, newGuid);
+            packetSender.Send(setState);
+            Log.Debug("Client sent setState for Guid={0} BaseGuid={1} goType={2} value={3} setAmount={4} newGuid={5}", guid, baseGuid, goType, value, setAmount, newGuid);
+        }
+
+        private Base GetBase(GameObject gameObject)
+        {
+            Base baseOut = null;
+
             try
             {
-                 baseGuid = GuidHelper.GetGuid(gameObject.GetComponentInParent<Base>().gameObject);
+                // For furniture & completed construction it's a ComponentInParent
+                baseOut = gameObject.GetComponentInParent<Base>();
+
+                if(baseOut == null)
+                {
+               
+                        // We must still be constructing the base
+                        baseOut = gameObject.transform.parent.gameObject.GetComponentInChildren<Base>();
+
+                }
             }
-            catch(Exception)
+            catch (Exception e)
             {
-                // Apparently a state is set on an orphaned object. We don't care for this in multiplayer.
-                // Deconstruction is a nasty piece of work. This is most likely the cause.
-                //return;
+                Log.Debug("Building::GetBase() Base doesn't exist.");
             }
 
-            SetState setState = new SetState(guid, baseGuid, goType, value, setAmount);
-            packetSender.Send(setState);
-            Log.Debug("Client sent setState for Guid={0} BaseGuid={1} goType={2} value={3} setAmount={4}", guid, baseGuid, goType, value, setAmount);
+            return baseOut;
         }
     }
 }

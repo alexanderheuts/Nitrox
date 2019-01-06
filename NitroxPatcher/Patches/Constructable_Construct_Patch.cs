@@ -5,6 +5,7 @@ using NitroxClient.GameLogic;
 using NitroxClient.GameLogic.Helper;
 using NitroxModel.Logger;
 using NitroxModel.Core;
+using UnityEngine;
 
 namespace NitroxPatcher.Patches
 {
@@ -17,9 +18,20 @@ namespace NitroxPatcher.Patches
         {
             Log.Debug("Constructable_ConstructPatch::Prefix");
             Log.Debug("Constructable GUID={0}", GuidHelper.GetGuid(__instance.gameObject));
+            GameObject parent = __instance.transform.parent.gameObject;
             Log.Debug("Constructable BaseGuid={0} Type={1}", GuidHelper.GetGuid(__instance.transform.parent.gameObject), __instance.transform.parent.gameObject.GetType());
+            Base baseInParentChildren = parent.GetComponentInChildren<Base>();
+            Base baseInGameObject = __instance.gameObject.GetComponent<Base>();
+            if (baseInGameObject != null)
+            {
+                Log.Debug("Parent in baseInGameObject with GUID={0}", GuidHelper.GetGuid(baseInGameObject.gameObject));
+            }
+            if (baseInParentChildren != null)
+            {
+                Log.Debug("Parent in baseInParentChildren with GUID={0}", GuidHelper.GetGuid(baseInParentChildren.gameObject));
+            }
 
-            if(__instance is ConstructableBase)
+            if (__instance is ConstructableBase)
             {
                 // Check to make sure that we don't call ChangeConstructionAmount twice due to inheritance.
                 return true;

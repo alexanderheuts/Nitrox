@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="Patches\BaseDeconstructable_Deconstruct_Patch.cs" />
+    <Compile Include="Patches\Base_SpawnModule_Patch.cs" />
     <Compile Include="Patches\ConstructableBase_Construct_Patch.cs" />
     <Compile Include="Patches\ConstructableBase_Deconstruct_Patch.cs" />
     <Compile Include="Patches\ConstructableBase_SetState_Patch.cs" />

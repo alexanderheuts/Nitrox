@@ -140,7 +140,7 @@ namespace NitroxClient.MonoBehaviours
                 constructable = MultiplayerBuilder.TryPlaceBase(targetBase);
                 gameObject = constructable.gameObject;
 
-                //GuidHelper.SetNewGuid(gameObject.GetComponentInParent<Base>().gameObject, basePiece.BaseGuid);
+                GuidHelper.SetNewGuid(gameObject.transform.parent.GetComponentInChildren<Base>().gameObject, basePiece.BaseGuid);
             }
             
             GuidHelper.SetNewGuid(gameObject, basePiece.Guid);
@@ -170,10 +170,6 @@ namespace NitroxClient.MonoBehaviours
                     ConstructableBase constructable = constructing.GetComponent<ConstructableBase>();
                     constructable.constructedAmount = amountChanged.Amount;
                     constructable.Construct();
-
-                    Log.Debug("ThrottledBuilder Change Base GUID");
-                    Base b = constructable.GetComponentInParent<Base>();
-                    GuidHelper.SetNewGuid(b.gameObject, amountChanged.BaseGuid);
                 }
             }
             
@@ -238,12 +234,28 @@ namespace NitroxClient.MonoBehaviours
                 // TODO: fix for changing GUID's in deconstruct due to copy instantiation
                 GameObject deconstructing = GuidHelper.RequireObjectFrom(completed.BaseGuid);
 
-                ConstructableBase constructableBase = deconstructing.GetComponentInChildren<ConstructableBase>();
-                if (constructableBase != null && constructableBase.Deconstruct())
+                Base b = deconstructing.GetComponent<Base>();
+                BaseDeconstructable bd = b.GetComponentInChildren<BaseDeconstructable>();
+
+                if (bd.face != null)
                 {
-                    Log.Debug("Deconstruction Success");
+                    b.ClearFace(bd.face.Value, bd.faceType);
                 }
-                Destroy(deconstructing);
+                else
+                {
+                    b.ClearCell(bd.bounds.mins);
+                }
+                if (b.IsEmpty(null))
+                {
+                    b.OnPreDestroy();
+                    Destroy(b.gameObject);
+                }
+                else
+                {
+                    b.FixRoomFloors();
+                    b.FixCorridorLinks();
+                    b.RebuildGeometry();
+                }
             }
         }
 
@@ -262,18 +274,22 @@ namespace NitroxClient.MonoBehaviours
                 {
                     // TODO: fix deconstruction
                     ConstructableBase cb = goSetState.GetComponent<ConstructableBase>();
-                    if (!setState.Value == cb._constructed && !setState.Value && setState.SetAmount)
+
+                    cb.SetState(setState.Value, setState.SetAmount);
+
+                    if(setState.Value && setState.SetAmount)
                     {
-                        Log.Debug("ThrottledBuilder Change Base GUID");
-                       // Base b = cb.GetComponentInParent<Base>();
-                       // GuidHelper.SetNewGuid(b.gameObject, setState.BaseGuid);
-                        //cb.Deconstruct();
-                        //Destroy(goSetState);
-                        //Log.Debug("Destroyed Base during SetState");
-                    }
-                    else
-                    {
-                        cb.SetState(setState.Value, setState.SetAmount);
+                        Optional<object> newInstance = TransientLocalObjectManager.Get(TransientLocalObjectManager.TransientObjectType.BASE_NEWLY_SPAWNED_MODULE_GAMEOBJECT);
+                        if(newInstance.IsPresent() && setState.NewGuid != "")
+                        {
+                            GameObject newBaseModule = (GameObject)newInstance.Get();
+                            GuidHelper.SetNewGuid(newBaseModule, setState.NewGuid);
+                            TransientLocalObjectManager.localObjectsById.Remove(TransientLocalObjectManager.TransientObjectType.BASE_NEWLY_SPAWNED_MODULE_GAMEOBJECT);
+                        }
+                        else
+                        {
+                            Log.Error("Could not set new GUID during SetState");
+                        }
                     }
                 }
             }
