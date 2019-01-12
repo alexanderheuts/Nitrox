@@ -3,6 +3,7 @@ using NitroxClient.Communication.Packets.Processors.Abstract;
 using NitroxClient.GameLogic;
 using NitroxClient.GameLogic.Helper;
 using NitroxClient.Unity.Helper;
+using NitroxModel.Helper;
 using NitroxModel.Packets;
 using System.Collections;
 using UnityEngine;
@@ -30,15 +31,16 @@ namespace NitroxClient.Communication.Packets.Processors
             
             using (packetSender.Suppress<VehicleDocking>())
             {
-                Transform transform = vehicleDockingBay.dockingEndPos;
-                if (vehicle is Exosuit)
-                {
-                    transform = vehicleDockingBay.dockingEndPosExo;
-                }
-                vehicle.transform.position = transform.position;
-                vehicle.transform.rotation = transform.rotation;
+                //Transform transform = vehicleDockingBay.dockingEndPos;
+                //if (vehicle is Exosuit)
+                //{
+                //    transform = vehicleDockingBay.dockingEndPosExo;
+                //}
+                //vehicle.transform.position = transform.position;
+                //vehicle.transform.rotation = transform.rotation;
 
-                vehicleDockingBay.DockVehicle(vehicle);
+                //vehicleDockingBay.DockVehicle(vehicle);
+                vehicle.ReflectionCall("AttachToBay");
             }
 
             vehicle.StartCoroutine(DisablePilotingAfterAnimation(packet.VehicleGuid, packet.PlayerId));
